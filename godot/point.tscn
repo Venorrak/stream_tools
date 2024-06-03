@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://df6nvis7uipn2"]
+
+[ext_resource type="Texture2D" uid="uid://cckg5tlg3dykv" path="res://wallpaperCool.png" id="1_b5wqf"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_sgpvh"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vbim7"]
+albedo_texture = ExtResource("1_b5wqf")
+
+[sub_resource type="SphereMesh" id="SphereMesh_tt7o6"]
+lightmap_size_hint = Vector2i(17, 9)
+
+[node name="Node3D" type="Node3D"]
+
+[node name="RigidBody3D" type="RigidBody3D" parent="."]
+mass = 0.01
+gravity_scale = 0.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D"]
+transform = Transform3D(3.21, 0, 0, 0, 3.21, 0, 0, 0, 3.21, 0, 0, 0)
+shape = SubResource("SphereShape3D_sgpvh")
+disabled = true
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RigidBody3D/CollisionShape3D"]
+material_override = SubResource("StandardMaterial3D_vbim7")
+cast_shadow = 0
+mesh = SubResource("SphereMesh_tt7o6")
