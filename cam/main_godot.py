@@ -36,7 +36,7 @@ def getLandmarks(cap, face_mesh):
     return landmarks
 
 def main():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
