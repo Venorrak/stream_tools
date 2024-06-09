@@ -1,5 +1,5 @@
 extends Node3D
-const point = preload("point.tscn")
+const point = preload("res://scenes/point.tscn")
 
 var points = []
 var done = false

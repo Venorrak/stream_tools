@@ -11,7 +11,7 @@ PORT = 12345
 def getXY(pt):
     width = 1280
     height = 720
-    return [int(pt.x * width), int(pt.y * height), int(width * pt.z)]
+    return [pt.x * width, pt.y * height, width * pt.z]
 
 def getLandmarks(cap, face_mesh):
     ret, frame = cap.read()
@@ -24,13 +24,13 @@ def getLandmarks(cap, face_mesh):
     landmarks = []
     if res.multi_face_landmarks:
         for face_landmarks in res.multi_face_landmarks:
-            for i in range(478):
+            for i in [123, 352, 8, 200, 159, 145, 468, 33, 133, 386, 374, 473, 362, 263]:
                 pt = face_landmarks.landmark[i]
-                x = int(pt.x * width)
-                y = int(pt.y * height)
-                cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
-                if i == 1:
-                    cv2.putText(frame, f'{int(width * pt.z)}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                # x = int(pt.x * width)
+                # y = int(pt.y * height)
+                # cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+                # #if i == 1:
+                # cv2.putText(frame, f'{int(width * pt.z)}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
                 landmarks.append(getXY(pt))
     #cv2.imshow("Keypoints", frame)
     return landmarks
@@ -40,7 +40,7 @@ def main():
     face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+    last_time = time.time()
     if not (cap.isOpened()):
         cap.release()
         cv2.destroyAllWindows()
@@ -51,8 +51,10 @@ def main():
             #transform landmarks to json
             msg = json.dumps(landmarks)
             #send json to godot with socket
-            sock.sendto(msg.encode("ascii"), (HOST, PORT))
-
+            now_time = time.time()
+            if now_time - last_time > 0:
+                sock.sendto(msg.encode("ascii"), (HOST, PORT))
+                last_time = time.time()
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 

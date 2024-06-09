@@ -1,0 +1,75 @@
+[gd_scene load_steps=8 format=3 uid="uid://d1k2mnsrr1vjq"]
+
+[ext_resource type="Script" path="res://scripts/background.gd" id="1_717wh"]
+[ext_resource type="Shader" path="res://scripts/face.gdshader" id="2_uf4db"]
+[ext_resource type="Script" path="res://scripts/face_mesh.gd" id="3_pp3ir"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ggcpg"]
+shader = ExtResource("2_uf4db")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_swp5r"]
+albedo_color = Color(0.91738, 0.687609, 0.567546, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ysmp5"]
+albedo_color = Color(0.752937, 0.450774, 0.261063, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3shhr"]
+albedo_color = Color(0.982953, 0.60174, 0.495226, 1)
+
+[node name="Face" type="Node3D"]
+script = ExtResource("1_717wh")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, -8.72702e-08, -8.74227e-08, -8.74226e-08, -0.999999, -0.00174533, -8.72702e-08, 0.00174533, -0.999999, 0, -7.05043, -39.5646)
+current = true
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.938493, 0.345298, 0, -0.345298, 0.938493, -0.0242023, 8.4332, 24.6661)
+light_color = Color(1, 1, 0.917647, 1)
+light_energy = 1.293
+light_volumetric_fog_energy = 0.0
+light_specular = 1.308
+shadow_enabled = true
+shadow_bias = 0.0
+shadow_normal_bias = 0.0
+shadow_opacity = 0.0
+spot_range = 4096.0
+spot_angle = 175.35
+spot_angle_attenuation = 0.659755
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+visible = false
+material = SubResource("ShaderMaterial_ggcpg")
+offset_left = -1556.0
+offset_top = -854.0
+offset_right = 1335.0
+offset_bottom = 838.0
+
+[node name="visage" type="Node3D" parent="CanvasLayer"]
+
+[node name="face" type="MeshInstance3D" parent="CanvasLayer/visage"]
+material_override = SubResource("StandardMaterial3D_swp5r")
+skeleton = NodePath("../..")
+script = ExtResource("3_pp3ir")
+
+[node name="brows" type="MeshInstance3D" parent="CanvasLayer/visage"]
+material_override = SubResource("StandardMaterial3D_ysmp5")
+skeleton = NodePath("../..")
+
+[node name="lips" type="MeshInstance3D" parent="CanvasLayer/visage"]
+material_override = SubResource("StandardMaterial3D_3shhr")
+skeleton = NodePath("../..")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.2455, 25)
+light_energy = 5.687
+light_indirect_energy = 16.0
+light_volumetric_fog_energy = 16.0
+light_size = 1.0
+shadow_enabled = true
+shadow_reverse_cull_face = true
+shadow_opacity = 0.27
+shadow_blur = 2.818
+omni_range = 51.876

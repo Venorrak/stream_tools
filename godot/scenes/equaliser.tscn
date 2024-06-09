@@ -1,0 +1,188 @@
+[gd_scene load_steps=4 format=3 uid="uid://qcprw7il6mp0"]
+
+[ext_resource type="Script" path="res://scripts/equaliser.gd" id="1_8v3db"]
+[ext_resource type="Texture2D" uid="uid://dfnr3yy3oxgfw" path="res://rescouces/icon.svg" id="2_torj8"]
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_r7b58"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_8v3db")
+
+[node name="right" type="Node2D" parent="."]
+position = Vector2(640, 792)
+scale = Vector2(1, -1)
+
+[node name="ColorRect" type="ColorRect" parent="right"]
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(0.5, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="right"]
+offset_left = 20.0
+offset_right = 60.0
+offset_bottom = 40.0
+
+[node name="ColorRect3" type="ColorRect" parent="right"]
+offset_left = 60.0
+offset_right = 100.0
+offset_bottom = 40.0
+
+[node name="ColorRect4" type="ColorRect" parent="right"]
+offset_left = 100.0
+offset_right = 140.0
+offset_bottom = 40.0
+
+[node name="ColorRect5" type="ColorRect" parent="right"]
+offset_left = 140.0
+offset_right = 180.0
+offset_bottom = 40.0
+
+[node name="ColorRect6" type="ColorRect" parent="right"]
+offset_left = 180.0
+offset_right = 220.0
+offset_bottom = 40.0
+
+[node name="ColorRect7" type="ColorRect" parent="right"]
+offset_left = 220.0
+offset_right = 260.0
+offset_bottom = 40.0
+
+[node name="ColorRect8" type="ColorRect" parent="right"]
+offset_left = 260.0
+offset_right = 300.0
+offset_bottom = 40.0
+
+[node name="ColorRect9" type="ColorRect" parent="right"]
+offset_left = 300.0
+offset_right = 340.0
+offset_bottom = 40.0
+
+[node name="ColorRect10" type="ColorRect" parent="right"]
+offset_left = 340.0
+offset_right = 380.0
+offset_bottom = 40.0
+
+[node name="ColorRect11" type="ColorRect" parent="right"]
+offset_left = 380.0
+offset_right = 420.0
+offset_bottom = 40.0
+
+[node name="ColorRect12" type="ColorRect" parent="right"]
+offset_left = 420.0
+offset_right = 460.0
+offset_bottom = 40.0
+
+[node name="ColorRect13" type="ColorRect" parent="right"]
+offset_left = 460.0
+offset_right = 500.0
+offset_bottom = 40.0
+
+[node name="ColorRect14" type="ColorRect" parent="right"]
+offset_left = 500.0
+offset_right = 540.0
+offset_bottom = 40.0
+
+[node name="ColorRect15" type="ColorRect" parent="right"]
+offset_left = 540.0
+offset_right = 580.0
+offset_bottom = 40.0
+
+[node name="ColorRect16" type="ColorRect" parent="right"]
+offset_left = 580.0
+offset_right = 620.0
+offset_bottom = 40.0
+
+[node name="left" type="Node2D" parent="."]
+position = Vector2(640, 792)
+scale = Vector2(-1, -1)
+
+[node name="ColorRect" type="ColorRect" parent="left"]
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(0.5, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="left"]
+offset_left = 20.0
+offset_right = 60.0
+offset_bottom = 40.0
+
+[node name="ColorRect3" type="ColorRect" parent="left"]
+offset_left = 60.0
+offset_right = 100.0
+offset_bottom = 40.0
+
+[node name="ColorRect4" type="ColorRect" parent="left"]
+offset_left = 100.0
+offset_right = 140.0
+offset_bottom = 40.0
+
+[node name="ColorRect5" type="ColorRect" parent="left"]
+offset_left = 140.0
+offset_right = 180.0
+offset_bottom = 40.0
+
+[node name="ColorRect6" type="ColorRect" parent="left"]
+offset_left = 180.0
+offset_right = 220.0
+offset_bottom = 40.0
+
+[node name="ColorRect7" type="ColorRect" parent="left"]
+offset_left = 220.0
+offset_right = 260.0
+offset_bottom = 40.0
+
+[node name="ColorRect8" type="ColorRect" parent="left"]
+offset_left = 260.0
+offset_right = 300.0
+offset_bottom = 40.0
+
+[node name="ColorRect9" type="ColorRect" parent="left"]
+offset_left = 300.0
+offset_right = 340.0
+offset_bottom = 40.0
+
+[node name="ColorRect10" type="ColorRect" parent="left"]
+offset_left = 340.0
+offset_right = 380.0
+offset_bottom = 40.0
+
+[node name="ColorRect11" type="ColorRect" parent="left"]
+offset_left = 380.0
+offset_right = 420.0
+offset_bottom = 40.0
+
+[node name="ColorRect12" type="ColorRect" parent="left"]
+offset_left = 420.0
+offset_right = 460.0
+offset_bottom = 40.0
+
+[node name="ColorRect13" type="ColorRect" parent="left"]
+offset_left = 460.0
+offset_right = 500.0
+offset_bottom = 40.0
+
+[node name="ColorRect14" type="ColorRect" parent="left"]
+offset_left = 500.0
+offset_right = 540.0
+offset_bottom = 40.0
+
+[node name="ColorRect15" type="ColorRect" parent="left"]
+offset_left = 540.0
+offset_right = 580.0
+offset_bottom = 40.0
+
+[node name="ColorRect16" type="ColorRect" parent="left"]
+offset_left = 580.0
+offset_right = 620.0
+offset_bottom = 40.0
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(1280, 960)
+scale = Vector2(0.225, 0.225)
+texture = ExtResource("2_torj8")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamMicrophone_r7b58")
+volume_db = 9.009
+bus = &"mic"
