@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://h4kmndb5uudp"]
+
+[ext_resource type="PackedScene" uid="uid://mq214l2crrq7" path="res://scenes/chat_message.tscn" id="1_khlwv"]
+[ext_resource type="Theme" uid="uid://d3dmwkyonu0ic" path="res://rescouces/new_theme.tres" id="1_ytk5w"]
+
+[node name="TwitchChat" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 10.0
+offset_bottom = 10.0
+theme = ExtResource("1_ytk5w")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 334.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ChatMessage" parent="MarginContainer/VBoxContainer" instance=ExtResource("1_khlwv")]
+layout_mode = 2
+
+[node name="ChatMessage2" parent="MarginContainer/VBoxContainer" instance=ExtResource("1_khlwv")]
+layout_mode = 2

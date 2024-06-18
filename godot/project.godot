@@ -20,6 +20,10 @@ config/icon="res://rescouces/icon.svg"
 
 driver/enable_input=true
 
+[autoload]
+
+InFront="res://scenes/in_front.tscn"
+
 [display]
 
 window/per_pixel_transparency/allowed=true

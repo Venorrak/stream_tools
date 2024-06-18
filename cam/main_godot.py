@@ -23,16 +23,9 @@ def getLandmarks(cap, face_mesh):
     res = face_mesh.process(rgb_frame)
     landmarks = []
     if res.multi_face_landmarks:
-        for face_landmarks in res.multi_face_landmarks:
-            for i in [123, 352, 8, 200, 159, 145, 468, 33, 133, 386, 374, 473, 362, 263]:
-                pt = face_landmarks.landmark[i]
-                # x = int(pt.x * width)
-                # y = int(pt.y * height)
-                # cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
-                # #if i == 1:
-                # cv2.putText(frame, f'{int(width * pt.z)}', (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                landmarks.append(getXY(pt))
-    #cv2.imshow("Keypoints", frame)
+        for i in [123, 352, 8, 200, 159, 145, 468, 33, 133, 386, 374, 473, 362, 263]:
+            pt = res.multi_face_landmarks[0].landmark[i]
+            landmarks.append(getXY(pt))
     return landmarks
 
 def main():

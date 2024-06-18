@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckxlo4hqja4ta"]
+
+[ext_resource type="PackedScene" uid="uid://h4kmndb5uudp" path="res://scenes/twitch_chat.tscn" id="1_bgden"]
+
+[node name="InFront" type="CanvasLayer"]
+
+[node name="TwitchChat" parent="." instance=ExtResource("1_bgden")]
+visible = false

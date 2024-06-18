@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://mq214l2crrq7"]
+
+[node name="ChatMessage" type="VBoxContainer"]
+offset_right = 63.0
+offset_bottom = 50.0
+theme_override_constants/separation = -1
+
+[node name="Nom" type="Label" parent="."]
+layout_mode = 2
+text = "un Nom"
+horizontal_alignment = 1
+
+[node name="message" type="RichTextLabel" parent="."]
+layout_mode = 2
+text = "Imagine j'ai ecrit quelque chose de cool."
+fit_content = true

@@ -1,8 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://dfyg3jrvb5863"]
+[gd_scene load_steps=3 format=3 uid="uid://dfyg3jrvb5863"]
 
 [ext_resource type="PackedScene" uid="uid://b3lfsldaf085" path="res://scenes/tv.tscn" id="1_5sr1d"]
+[ext_resource type="Script" path="res://scenes/gestion.gd" id="1_pj5wt"]
 
 [node name="Scene" type="Node3D"]
+script = ExtResource("1_pj5wt")
 
 [node name="Tv" parent="." instance=ExtResource("1_5sr1d")]
 

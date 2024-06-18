@@ -1,0 +1,26 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://d3dmwkyonu0ic"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e860s"]
+content_margin_left = 7.0
+content_margin_right = 7.0
+bg_color = Color(0, 0, 0, 0.490196)
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.999988, 0, 0.360588, 1)
+corner_radius_top_right = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tglb8"]
+content_margin_left = 7.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0, 0, 0, 0.490196)
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.889674, 0, 0.309398, 1)
+corner_radius_bottom_right = 10
+
+[resource]
+Label/styles/normal = SubResource("StyleBoxFlat_e860s")
+RichTextLabel/styles/normal = SubResource("StyleBoxFlat_tglb8")
+VBoxContainer/constants/separation = 10

@@ -30,7 +30,7 @@ transform = Transform3D(1, 0, 0, 0, 0.75, 0, 0, 0, 1, 0, 0, 0)
 mesh = ExtResource("2_wdfl0")
 skeleton = NodePath("")
 
-[node name="Sprite3D" type="Sprite3D" parent="."]
+[node name="face" type="Sprite3D" parent="."]
 transform = Transform3D(-6.11959e-09, 0, 0.14, 0, 0.14, 0, -0.14, 0, -6.11959e-09, 0.803684, 0, 0)
 texture = SubResource("ViewportTexture_rww40")
 
@@ -53,7 +53,7 @@ position = Vector2(400, 220)
 scale = Vector2(126.781, 198.195)
 mesh = SubResource("SphereMesh_ec1f2")
 
-[node name="Equaliser" parent="display/SubViewport" instance=ExtResource("3_ko2ty")]
+[node name="equaliser" parent="display/SubViewport" instance=ExtResource("3_ko2ty")]
 
 [node name="tv_shader" type="ColorRect" parent="display/SubViewport"]
 material = SubResource("ShaderMaterial_j8fgg")
@@ -61,12 +61,19 @@ offset_right = 40.0
 offset_bottom = 40.0
 scale = Vector2(33.8775, 24.1537)
 
+[node name="green_screen" type="ColorRect" parent="display/SubViewport"]
+visible = false
+offset_right = 40.0
+offset_bottom = 30.0
+scale = Vector2(33.94, 33.94)
+color = Color(0, 1, 0, 1)
+
 [node name="SpotLight3D" type="SpotLight3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0.812534, 0, 0)
 light_color = Color(0.476006, 0.535717, 0.644531, 1)
 light_energy = 6.01
 light_size = 0.111
 spot_range = 2.777
-spot_attenuation = 1.46409
+spot_attenuation = 1.27456
 spot_angle = 89.0
-spot_angle_attenuation = 0.435275
+spot_angle_attenuation = 0.129408
