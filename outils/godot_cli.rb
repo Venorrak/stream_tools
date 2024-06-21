@@ -37,15 +37,23 @@ class GodotCli
 
     def menu()
         system('clear')
-        puts('1. freeze/unfreeze head')
-        puts('2. reset head')
-        puts('3. change color')
-        puts('4. rainbow_on_off')
-        puts('5. set head tiny')
-        puts('6. set head normal')
-        puts('7. green_screen_on_off')
-        puts('8. reset connection')
-        puts('9. back')
+        choices = [
+            'freeze/unfreeze head',
+            'reset head',
+            'change color',
+            'rainbow_on_off',
+            'set head tiny',
+            'set head normal',
+            'green_screen_on_off',
+            'reset connection',
+            'dum_on_off',
+            'brb_on_off',
+            'starting_on_off',
+            'back'
+        ]
+        choices.each_with_index do |choice, index|
+            puts("#{index + 1}. #{choice}")
+        end
         print('Enter your choice: ')
         choice = gets.chomp.to_i
         case choice
@@ -68,12 +76,46 @@ class GodotCli
             do_sleep()
             menu()
         when 9
+            dum_on_off()
+        when 10
+            brb_on_off()
+        when 11
+            starting_on_off()
+        when 12
             main_menu()
         else
             puts('Invalid choice')
             do_sleep()
             menu()
         end
+    end
+
+    def starting_on_off()
+        if !@godot_server.nil?
+            puts('starting_on_off')
+            msg = {
+                'command': 'starting_on_off',
+                'params': {},
+                'data': {}
+            }
+            send_to_godot(msg)
+            do_sleep()
+        end
+        menu()
+    end
+
+    def brb_on_off()
+        if !@godot_server.nil?
+            puts('brb_on_off')
+            msg = {
+                'command': 'brb_on_off',
+                'params': {},
+                'data': {}
+            }
+            send_to_godot(msg)
+            do_sleep()
+        end
+        menu()
     end
 
     def freeze_unfreeze_head()
@@ -167,6 +209,20 @@ class GodotCli
             puts('green_screen_on_off')
             msg = {
                 'command': 'green_on_off',
+                'params': {},
+                'data': {}
+            }
+            send_to_godot(msg)
+            do_sleep()
+        end
+        menu()
+    end
+
+    def dum_on_off()
+        if !@godot_server.nil?
+            puts('dum_on_off')
+            msg = {
+                'command': 'dum_on_off',
                 'params': {},
                 'data': {}
             }

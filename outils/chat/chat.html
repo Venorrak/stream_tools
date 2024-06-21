@@ -3,6 +3,7 @@
 <head>
     <title>Twitch chat</title>
     <link href="style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.3/purify.min.js"></script>
 </head>
 <body>
     <div id="chat">
@@ -16,7 +17,6 @@
                 <p>ceci est un test</p>
             </div>
         </div> -->
-
     </div>
 </body>
 <script>
@@ -32,6 +32,19 @@
                 return res.json();
             })
     }
+
+    function build_message(data){
+        var text = "";
+        for (var i = 0; i < data.length; i++){
+            if (data[i].type == 'text'){
+                text += DOMPurify.sanitize(data[i].content);
+            } else if (data[i].type == 'emote'){
+                text += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${data[i].id}/static/light/1.0" alt="" class="emote">`;
+            }
+        }  
+        return text;
+    }
+
     window.addEventListener('DOMContentLoaded', (event) => {
         var chat = document.getElementById('chat');
 
@@ -57,7 +70,7 @@
                     case 'negatif':
                         message.classList.add('negatif')
                         break;
-                    case 'subscibe':
+                    case 'subscribe':
                         message.classList.add('subscibe')
                         break;
                     case 'cheer':
@@ -71,14 +84,21 @@
                 var name = document.createElement('div');
                 name.className = 'name';
                 var nameH1 = document.createElement('h2');
-                nameH1.innerText = data[i].name;
+                nameH1.innerHTML = DOMPurify.sanitize(data[i].name);
                 nameH1.style.color = data[i].name_color;
+                var nameImg = document.createElement('img');
+                nameImg.src = data[i].profile_image_url;
+                nameImg.alt = '';
+                nameImg.className = 'profile';
+                name.appendChild(nameImg);
                 name.appendChild(nameH1);
                 var dataDiv = document.createElement('div');
                 dataDiv.className = 'data';
                 var dataP = document.createElement('p');
                 var line = document.createElement('hr');
-                dataP.innerText = data[i].message;
+
+                dataP.innerHTML = build_message(data[i].message);
+
                 dataDiv.appendChild(dataP);
                 message.appendChild(name);
                 message.appendChild(line);
@@ -95,7 +115,7 @@
                 var existingMessages = chat.getElementsByClassName('message');
                 Array.from(existingMessages).forEach(function(existingMessage) {
                     existingMessage.style.transition = 'transform 0.5s';
-                    existingMessage.style.transform = `translateY(${messageHeight}px)`;
+                    existingMessage.style.transform = `translateY(${messageHeight / 2}px)`;
                 });
 
                 message.style.opacity = '0';
@@ -116,6 +136,9 @@
                 }, 100);
 
                 })(i);
+            }
+            if (chat.children.length > 25) {
+                chat.lastElementChild.remove();
             }
         }, 500);
         

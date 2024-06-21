@@ -49,6 +49,13 @@
     font-size:medium;
 }
 
+.data .emote {
+    transform: scale(0.85);
+    transform-origin: bottom left;
+    margin-right: -4px;
+    margin-left: 2px;
+}
+
 .name {
     font-family: 'bebas_neue';
     padding-left: 10px;
@@ -56,8 +63,23 @@
     text-align: center;
     color: rgb(255, 196, 0);
     font-weight: bold;
-    margin: -15px;
+    margin-top: -10px;
+    margin-bottom: -13px;
+    margin-left: 5px;
     font-size:small;
+}
+
+.name h2 {
+    transform: translatex(-14px);
+}
+
+.name .profile {
+    border-radius: 50%;
+    width: 20px;
+    height: auto;
+    margin-right: 3px;
+    float: left;
+    margin-left: -7px;
 }
 
 body {

@@ -5,6 +5,10 @@ require "date"
 require 'faye/websocket'
 require 'eventmachine'
 require 'absolute_time'
+require "awesome_print"
+require "base64"
+require "digest"
+require "securerandom"
 
 gemfile do
     source "https://rubygems.org"
@@ -15,9 +19,12 @@ require "faraday"
 require_relative "secret.rb"
 require_relative "godot_cli.rb"
 require_relative "chat_tracker.rb"
+require_relative "obs_cli.rb"
 
 @godot = GodotCli.new()
 @godot.init()
+@obs = ObsCli.new()
+@obs.init(@obs_password)
 
 
 def main_menu()
@@ -34,12 +41,12 @@ def main_menu()
     when 2
         twitch_menu()
     when 3
-        obs_menu()
+        @obs.menu()
     when 4
         exit
     else
         puts "Invalid choice"
-        do_sleep()
+        sleep 1
         main_menu()
     end
 end

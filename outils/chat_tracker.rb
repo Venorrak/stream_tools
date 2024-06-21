@@ -16,6 +16,10 @@ $APItwitch = Faraday.new(url: "https://api.twitch.tv") do |conn|
     conn.request :url_encoded
 end
 
+$emotes_conn = Faraday.new(url: "https://static-cdn.jtvnw.net") do |conn|
+    conn.request :url_encoded
+end
+
 def do_sleep(x = 1)
     sleep(x)
 end
@@ -26,7 +30,7 @@ def getAccess()
     #https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#device-code-grant-flow
     response = $server.post("/oauth2/device") do |req|
         req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-        req.body = "client_id=#{@twitch_bot_id}&scopes=chat:read+chat:edit+user:bot+user:write:chat+channel:bot+user:manage:whispers+channel:moderate+moderator:read:followers+user:read:chat+channel:read:ads+channel:read:subscriptions+bits:read+moderator:manage:shoutouts+moderator:manage:announcements+channel:edit:commercial+moderator:manage:shoutouts+channel:manage:raids"
+        req.body = "client_id=#{@twitch_bot_id}&scopes=chat:read+chat:edit+user:bot+user:write:chat+channel:bot+user:manage:whispers+channel:moderate+moderator:read:followers+user:read:chat+channel:read:ads+channel:read:subscriptions+bits:read+moderator:manage:shoutouts+moderator:manage:announcements+channel:edit:commercial+moderator:manage:shoutouts+channel:manage:raids+moderator:read:chatters+channel:manage:vips+channel:manage:ads"
     end
     rep = JSON.parse(response.body)
     device_code = rep["device_code"]
@@ -65,6 +69,211 @@ def writeToJSON(data)
     File.write(FILEJSON, list.to_json)
 end
 
+def quick_end_case(rep = nil)
+    ap rep
+    gets
+    twitch_menu()
+end
+
+#menu
+def twitch_menu()
+    choices = [
+        "start commercial",
+        "create announcement",
+        "shoutout",
+        "create raid",
+        "cancel raid",
+        "get user data",
+        "snooze ad",
+        "get channel info",
+        "change stream title",
+        "get channel followers",
+        "get viewers",
+        "get channel emotes",
+        "get global emotes",
+        "get channel badges",
+        "get global badges",
+        "ban user",
+        "unban user",
+        "add vip",
+        "remove vip",
+        "back to main menu"
+    ]
+    system('clear')
+    choices.each_with_index do |choice, index|
+        puts("#{index + 1}. #{choice}")
+    end
+    print('Enter your choice: ')
+    choice = gets.chomp.to_i
+    case choice
+    when 1
+        print('Enter the length of the commercial (secs, max 180): ')
+        length = gets.chomp.to_i
+        if length == 0
+            rep = start_commercial()
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 2
+        print('Enter the message (exit to abort): ')
+        message = ""
+        until message.length > 0 && message.length < 500 || message == "exit"
+            message = gets.chomp
+        end
+        if message != "exit"
+            rep = create_announcement(message)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 3
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = shoutout(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 4
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = create_raid(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 5
+        rep = cancel_raid()
+        quick_end_case(rep)
+    when 6
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = getTwitchUser(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 7
+        rep = snooze_ad()
+        quick_end_case(rep)
+    when 8
+        print('Enter the channel name: ')
+        name = gets.chomp
+        if name != ""
+            rep = get_channel_info(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 9
+        print('Enter the title: ')
+        title = gets.chomp
+        if title != ""
+            rep = change_stream_title(title)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 10
+        print('Enter the channel name: ')
+        name = gets.chomp
+        if name != ""
+            print('Enter the user name (optional = ""): ')
+            user = gets.chomp
+            if user == ""
+                user = nil
+            end
+            rep = get_channel_follow(name, user)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 11
+        rep = get_viewers()
+        quick_end_case(rep)
+    when 12
+        print('Enter the channel name: ')
+        name = gets.chomp
+        if name != ""
+            rep = get_channel_emotes(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 13
+        rep = get_global_emotes()
+        quick_end_case(rep)
+    when 14
+        print('Enter the channel name: ')
+        name = gets.chomp
+        if name != ""
+            rep = get_channel_badge(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 15
+        rep = get_global_badge()
+        quick_end_case(rep)
+    when 16
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            print('Enter the duration (mins, 0 = permanent): ')
+            duration = gets.chomp.to_i
+            print('Enter the reason (optional = ""): ')
+            reason = gets.chomp
+            if reason == ""
+                reason = nil
+            end
+            rep = ban_user(name, duration, reason)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 17
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = unban_user(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 18
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = add_vip(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 19
+        print('Enter the username: ')
+        name = gets.chomp
+        if name != ""
+            rep = remove_vip(name)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 20
+        main_menu()
+    else
+        puts('Invalid choice')
+        do_sleep()
+        twitch_menu()
+    end
+end
+
+
+########################################################################################
+
 #function to subscribe to the eventsub
 def subscribeToEventSub(channel_id, session_id, type)
     data = {
@@ -89,59 +298,6 @@ def subscribeToEventSub(channel_id, session_id, type)
     return JSON.parse(response.body)
 end
 
-def twitch_menu()
-    system('clear')
-    puts('1. start commercial')
-    puts('2. create announcement')
-    puts('3. shoutout')
-    puts('4. create raid')
-    puts('5. cancel raid')
-    puts('6. get user data')
-    puts('7. back')
-    print('Enter your choice: ')
-    choice = gets.chomp.to_i
-    case choice
-    when 1
-        rep = start_commercial()
-        pp rep
-        gets
-        twitch_menu()
-    when 2
-        rep = create_announcement()
-        pp rep
-        gets
-        twitch_menu()
-    when 3
-        rep = shoutout()
-        pp rep
-        gets
-        twitch_menu()
-    when 4
-        rep = create_raid()
-        pp rep
-        gets
-        twitch_menu()
-    when 5
-        rep = cancel_raid()
-        pp rep 
-        gets
-        twitch_menu()
-    when 6
-        print('Enter the username: ')
-        name = gets.chomp
-        rep = getTwitchUser(name)
-        pp rep
-        gets
-        twitch_menu()
-    when 7
-        main_menu()
-    else
-        puts('Invalid choice')
-        do_sleep()
-        twitch_menu()
-    end
-end
-
 #function to get the user data from the username with the API
 def getTwitchUser(name)
     response = $APItwitch.get("/helix/users?login=#{name}") do |req|
@@ -157,9 +313,7 @@ def getTwitchUser(name)
 end
 
 #function to start a commercial with the API
-def start_commercial()
-    print('Enter the length of the commercial (secs, max 180): ')
-    length = gets.chomp.to_i
+def start_commercial(length)
     data = {
         "broadcaster_id": @me_id,
         "length": length
@@ -190,12 +344,7 @@ def start_commercial()
 end
 
 #function to create an announcement with the API
-def create_announcement()
-    print('Enter the message: ')
-    message = ""
-    until message.length > 0 && message.length < 500
-        message = gets.chomp
-    end
+def create_announcement(message)
     data = {
         "message": message
     }.to_json
@@ -218,56 +367,68 @@ def create_announcement()
 end
 
 #function to shoutout a user with the API
-def shoutout()
-    print('Enter the username: ')
-    name = gets.chomp
-    user = getTwitchUser(name)
-    response = $APItwitch.post("/helix/chat/shoutouts?from_broadcaster_id=#{@me_id}&to_broadcaster_id=#{user["data"][0]["id"]}&moderator_id=#{@me_id}") do |req|
-        req.headers["Authorization"] = "Bearer #{@token}"
-        req.headers["Client-Id"] = @twitch_bot_id
+def shoutout(name)
+    user_exists = false
+    begin
+        user_id = getTwitchUser(name)["data"][0]["id"]
+        user_exists = true
+    rescue
+        rep = "user doesn't exist"
     end
-    rep = response.status
-    case rep
-    when 204
-        rep = "Shoutout created"
-    when 403
-        rep = "can't shoutout"
-    when 429
-        rep = "Too many requests"
-    else
-        rep = "something wrong"
+    if user_exists == true
+        response = $APItwitch.post("/helix/chat/shoutouts?from_broadcaster_id=#{@me_id}&to_broadcaster_id=#{user_id}&moderator_id=#{@me_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+        rep = response.status
+        case rep
+        when 204
+            rep = "Shoutout created"
+        when 403
+            rep = "can't shoutout"
+        when 429
+            rep = "Too many requests"
+        else
+            rep = "something wrong"
+        end
     end
 
     return rep
 end
 
 #function to create a raid with the API
-def create_raid()
-    print('Enter the username: ')
-    name = gets.chomp
-    user = getTwitchUser(name)
-    response = $APItwitch.post("/helix/raids?from_broadcaster_id=#{@me_id}&to_broadcaster_id=#{user["data"][0]["id"]}") do |req|
-        req.headers["Authorization"] = "Bearer #{@token}"
-        req.headers["Client-Id"] = @twitch_bot_id
-    end
-
+def create_raid(name)
+    user_exists = false
     begin
-        rep = JSON.parse(response.body)
+        user_id = getTwitchUser(name)["data"][0]["id"]
+        user_exists = true
     rescue
-        rep = response.body
+        rep = "user doesn't exist"
     end
+    if user_exists == true
+        response = $APItwitch.post("/helix/raids?from_broadcaster_id=#{@me_id}&to_broadcaster_id=#{user_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
 
-    case response.status
-    when 200
-        p "Raid created"
-    when 404
-        p "User not found"
-    when 429
-        p "Too many requests"
-    when 409
-        p "Raid already in progress"
-    else
-        p "something wrong"
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "Raid created"
+        when 404
+            p "User not found"
+        when 429
+            p "Too many requests"
+        when 409
+            p "Raid already in progress"
+        else
+            p "something wrong"
+        end
     end
 
     return rep
@@ -290,6 +451,514 @@ def cancel_raid()
         rep = "Too many requests"
     else
         rep = "something wrong"
+    end
+
+    return rep
+end
+
+#function to snooze the ad with the API for 5 minutes
+def snooze_ad()
+    response = $APItwitch.post("/helix/channels/ads/schedule/snooze?broadcaster_id=#{@me_id}") do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+    end
+
+    begin
+        rep = JSON.parse(response.body)
+    rescue
+        rep = response.body
+    end
+
+    case response.status
+    when 200
+        p "Ad snoozed"
+    when 404
+        p "bad request"
+    when 429
+        p "Too many requests"
+    else
+        p "something wrong"
+    end
+
+    return rep
+end
+
+#function to get the channel info with the API
+def get_channel_info(name)
+    channel_exists = false
+    begin
+        channel_id = getTwitchUser(name)["data"][0]["id"]
+        channel_exists = true
+    rescue
+        rep = "channel doesn't exist"
+    end
+    if channel_exists == true
+        response = $APItwitch.get("/helix/channels?broadcaster_id=#{channel_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "Channel info"
+        when 400
+            p "bad request"
+        when 401
+            p "Unauthorized"
+        when 429
+            p "Too many requests"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to get the channel stream info with the API
+def change_stream_title(title)
+    data = {
+        "title": title,
+        "content_classification_labels": [
+            {
+                "id": "Gambling",
+                "is_enabled": "false"
+            },
+            {
+                "id": "ProfanityVulgarity",
+                "is_enabled": "false"
+            },
+            {
+                "id": "ViolentGraphic",
+                "is_enabled": "false"
+            },
+            {
+                "id": "SexualThemes",
+                "is_enabled": "false"
+            },
+            {
+                "id": "DrugsIntoxication",
+                "is_enabled": "false"
+            }
+        ]
+    }
+    response = $APItwitch.patch("/helix/channels?broadcaster_id=#{@me_id}", data) do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+        req.headers["Content-Type"] = "application/json"
+    end
+
+    case response.status
+    when 204
+        rep = "Title changed"
+    when 400
+        rep = "bad request"
+    when 401
+        rep = "Unauthorized"
+    when 403
+        rep = "Forbidden"
+    when 429
+        rep = "Too many requests"
+    else
+        rep = "something wrong"
+    end
+
+    return rep
+end
+
+#function to get the channel followers with the API can specify a user
+def get_channel_follow(channel_name, user_name)
+    channel_exists = false
+    user_exists = false
+    begin
+        channel_id = getTwitchUser(channel_name)["data"][0]["id"]
+        channel_exists = true
+        if !user_name.nil?
+            user_id = getTwitchUser(user_name)["data"][0]["id"]
+            user_exists = true
+        end
+    rescue
+        rep = "channel doesn't exist"
+    end
+    if channel_exists == true
+        if user_name.nil?
+            response = $APItwitch.get("/helix/channels/followers?broadcaster_id=#{channel_id}") do |req|
+                req.headers["Authorization"] = "Bearer #{@token}"
+                req.headers["Client-Id"] = @twitch_bot_id
+            end
+        else
+            response = $APItwitch.get("/helix/channels/followers?broadcaster_id=#{channel_id}&user_id=#{user_id}") do |req|
+                req.headers["Authorization"] = "Bearer #{@token}"
+                req.headers["Client-Id"] = @twitch_bot_id
+            end
+        end
+
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "Followers"
+        when 400
+            p "bad request"
+        when 401
+            p "Unauthorized"
+        when 429
+            p "Too many requests"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to get viewers of my channel with the API
+def get_viewers()
+    response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{@me_id}&moderator_id=#{@me_id}") do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+    end
+
+    begin
+        rep = JSON.parse(response.body)
+    rescue
+        rep = response.body
+    end
+
+    case response.status
+    when 200
+        p "Viewers"
+    when 400
+        p "bad request"
+    when 401
+        p "Unauthorized"
+    when 403
+        p "Forbidden"
+    when 429
+        p "Too many requests"
+    else
+        p "something wrong"
+    end
+
+    return rep
+end
+
+#function to get emotes of channel
+def get_channel_emotes(channel_name)
+    channel_exists = false
+    begin
+        channel_id = getTwitchUser(channel_name)["data"][0]["id"]
+        channel_exists = true
+    rescue
+        rep = "channel doesn't exist"
+    end
+    if channel_exists == true
+        response = $APItwitch.get("/helix/chat/emotes?broadcaster_id=#{channel_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "Emotes"
+        when 400
+            p "bad request"
+        when 401
+            p "Unauthorized"
+        when 429
+            p "Too many requests"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to get the general emoticons
+def get_global_emotes()
+    response = $APItwitch.get("/helix/chat/emotes/global") do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+    end
+
+    begin
+        rep = JSON.parse(response.body)
+    rescue
+        rep = response.body
+    end
+
+    case response.status
+    when 200
+        p "Global emotes"
+    when 400
+        p "bad request"
+    when 401
+        p "Unauthorized"
+    when 429
+        p "Too many requests"
+    else
+        p "something wrong"
+    end
+
+    return rep
+end
+
+#function to get the badges of the channel
+def get_channel_badge(channel_name)
+    channel_exists = false
+    begin
+        channel_id = getTwitchUser(channel_name)["data"][0]["id"]
+        channel_exists = true
+    rescue
+        rep = "channel doesn't exist"
+    end
+    if channel_exists == true
+        response = $APItwitch.get("/helix/chat/badges?broadcaster_id=#{channel_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "Badges"
+        when 400
+            p "bad request"
+        when 401
+            p "Unauthorized"
+        when 429
+            p "Too many requests"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to get the global badges
+def get_global_badge()
+    response = $APItwitch.get("/helix/chat/badges/global") do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+    end
+
+    begin
+        rep = JSON.parse(response.body)
+    rescue
+        rep = response.body
+    end
+
+    case response.status
+    when 200
+        p "Global badges"
+    when 400
+        p "bad request"
+    when 401
+        p "Unauthorized"
+    when 429
+        p "Too many requests"
+    else
+        p "something wrong"
+    end
+
+    return rep
+end
+
+#function to ban a user
+def ban_user(user_name, duration, reason)
+    user_exists = false
+    user = getTwitchUser(user_name)
+    duration = duration * 60
+    pre_data = {}
+    begin
+        pre_data["user_id"] = user["data"][0]["id"]
+        user_exists = true
+    rescue
+        rep = "user doesn't exist"
+    end
+    if user_exists == true
+        if duration != 0
+            pre_data["duration"] = duration
+        end
+        if reason != "" || reason != nil
+            pre_data["reason"] = reason
+        end
+        data = {
+            "data": pre_data
+        }
+        response = $APItwitch.post("/helix/moderation/bans?broadcaster_id=#{@me_id}&moderator_id=#{@me_id}", data) do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+        
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "User banned"
+        when 400
+            p "bad request"
+        when 403
+            p "Forbidden"
+        when 429
+            p "Too many requests"
+        when 409
+            p "conflict"
+        when 401
+            p "Unauthorized"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+
+end
+
+#function to unban a user
+def unban_user(user_name)
+    user_exists = false
+    begin
+        user_id = getTwitchUser(user_name)["data"][0]["id"]
+        user_exists = true
+    rescue
+        rep = "user doesn't exist"
+    end
+    if user_exists == true
+        response = $APItwitch.delete("/helix/moderation/bans?broadcaster_id=#{@me_id}&moderator_id=#{@me_id}&user_id#{user_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+        
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 204
+            p "User unbanned"
+        when 400
+            p "bad request"
+        when 403
+            p "Forbidden"
+        when 429
+            p "Too many requests"
+        when 409
+            p "conflict"
+        when 401
+            p "Unauthorized"
+        else
+            p "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to give vip to a user
+def add_vip(user_name)
+    user_exists = false
+    begin
+        user_id = getTwitchUser(user_name)["data"][0]["id"]
+        user_exists = true
+    rescue
+        rep = "user doesn't exist"
+    end
+    if user_exists == true
+        response = $APItwitch.post("/helix/moderation/vips?broadcaster_id=#{@me_id}&user_id=#{user_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+
+        case response.status
+        when 204
+            rep = "User added to VIP"
+        when 400
+            rep = "bad request"
+        when 403
+            rep = "Forbidden"
+        when 429
+            rep = "Too many requests"
+        when 422
+            rep = "Unprocessable Entity"
+        when 425
+            rep = "Too Early"
+        when 409
+            rep = "conflict"
+        when 401
+            rep = "Unauthorized"
+        else
+            rep = "something wrong"
+        end
+    end
+
+    return rep
+end
+
+#function to remove vip from a user
+def remove_vip(user_name)
+    user_exists = false
+    begin
+        user_id = getTwitchUser(user_name)["data"][0]["id"]
+        user_exists = true
+    rescue
+        rep = "user doesn't exist"
+    end
+    if user_exists == true
+        response = $APItwitch.delete("/helix/moderation/vips?broadcaster_id=#{@me_id}&user_id=#{user_id}") do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+        end
+
+        case response.status
+        when 204
+            rep = "User removed from VIP"
+        when 400
+            rep = "bad request"
+        when 403
+            rep = "Forbidden"
+        when 429
+            rep = "Too many requests"
+        when 422
+            rep = "Unprocessable Entity"
+        when 425
+            rep = "Too Early"
+        when 409
+            rep = "conflict"
+        when 401
+            rep = "Unauthorized"
+        else
+            rep = "something wrong"
+        end
     end
 
     return rep
@@ -338,10 +1007,49 @@ Thread.start do
                     writeToJSON(msg)
 
                 when "channel.chat.message"
+                    message = []
+                    data["payload"]["event"]["message"]["fragments"].each do |frag|
+                        if frag["type"] == "text"
+                            message.push({
+                                "type": "text",
+                                "content": frag["text"]
+                            })
+                        elsif frag["type"] == "emote"
+                            message.push({
+                                "type": "emote",
+                                "id": frag["emote"]["id"]
+                            })
+                        else
+                            message.push({
+                                "type": "text",
+                                "content": frag["text"]
+                            })
+                        end
+                    end
+                    registered = false
+                    pfp_url = ""
+                    list = JSON.parse(File.read(File.join(__dir__, "chat/pfp.json")))
+                    list.each do |pfp|
+                        if pfp["name"] == data["payload"]["event"]["chatter_user_login"]
+                            registered = true
+                            pfp_url = pfp["url"]
+                            break
+                        end
+                    end
+                    if registered == false
+                        pfp_url = getTwitchUser(data["payload"]["event"]["chatter_user_login"])["data"][0]["profile_image_url"]
+                        list.push({
+                            "name": data["payload"]["event"]["chatter_user_login"],
+                            "url": pfp_url
+                        })
+                        File.write("chat/pfp.json", list.to_json)
+                    end
+
                     msg = {
                         "name": data["payload"]["event"]["chatter_user_name"],
                         "name_color": data["payload"]["event"]["color"],
-                        "message": data["payload"]["event"]["message"]["text"],
+                        "profile_image_url": pfp_url,
+                        "message": message,
                         "type": "default"
                     }
                     writeToJSON(msg)
@@ -361,7 +1069,7 @@ Thread.start do
                             "name": "Subscribe",
                             "name_color": "green",
                             "message": "#{data["event"]["user_name"]} has subscribed",
-                            "type": "subscibe"
+                            "type": "subscribe"
                         }
                         writeToJSON(msg)
                     end
@@ -372,14 +1080,14 @@ Thread.start do
                             "name": "Gift Sub",
                             "name_color": "green",
                             "message": "anonymous has gifted #{data["event"]["total"]} subs",
-                            "type": "subscibe"
+                            "type": "subscribe"
                         }
                     else
                         msg = {
                             "name": "Gift Sub",
                             "name_color": "green",
                             "message": "#{data["event"]["gifter_name"]} has gifted #{data["event"]["total"]} subs",
-                            "type": "subscibe"
+                            "type": "subscribe"
                         }
                     end
                     writeToJSON(msg)

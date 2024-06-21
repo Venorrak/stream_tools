@@ -88,3 +88,7 @@ func _process(delta):
 			rainbow_status += 0.02
 		else:
 			tv_mesh.get_active_material(0).albedo_color = Color("ffffff")
+
+
+func _on_rainbow_timer_timeout():
+	rainbow = false

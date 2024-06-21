@@ -9,4 +9,4 @@ script = ExtResource("1_pj5wt")
 [node name="Tv" parent="." instance=ExtResource("1_5sr1d")]
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 2.927, 0, 0)
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 3, 0, 0)
