@@ -116,4 +116,8 @@ spot_angle_attenuation = 0.129408
 [node name="rainbow_timer" type="Timer" parent="."]
 wait_time = 20.0
 
+[node name="dum_timer" type="Timer" parent="."]
+wait_time = 20.0
+
 [connection signal="timeout" from="rainbow_timer" to="." method="_on_rainbow_timer_timeout"]
+[connection signal="timeout" from="dum_timer" to="." method="_on_dum_timer_timeout"]

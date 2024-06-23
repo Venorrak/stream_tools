@@ -21,11 +21,7 @@ require_relative "godot_cli.rb"
 require_relative "chat_tracker.rb"
 require_relative "obs_cli.rb"
 
-@godot = GodotCli.new()
-@godot.init()
-@obs = ObsCli.new()
-@obs.init(@obs_password)
-
+godot_init()
 
 def main_menu()
     system "clear"
@@ -37,11 +33,11 @@ def main_menu()
     choice = gets.chomp.to_i
     case choice
     when 1
-        @godot.menu()
+        godot_menu()
     when 2
         twitch_menu()
     when 3
-        @obs.menu()
+        obs_menu()
     when 4
         exit
     else

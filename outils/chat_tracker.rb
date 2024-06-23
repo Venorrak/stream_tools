@@ -966,6 +966,31 @@ end
 
 #######################################################################################
 
+def treat_comments(data)
+    first_frag = data["payload"]["event"]["message"]["fragments"][0]
+    if first_frag["type"] == "text"
+        words = first_frag["text"].split(" ")
+        case words[0]
+        when "!color"
+            p "color"
+            color = words[1]
+            if color.match?(/^#[0-9A-F]{6}$/i)
+                color = color.delete_prefix("#")
+                change_color2(color)
+            end
+
+        when "!rainbow"
+            p "rainbow"
+            rainbow_on_off()
+        when "!dum"
+            p "dum"
+            dum_on_off()
+        end
+    end
+end
+
+#######################################################################################
+
 getAccess()
 @me_id = getTwitchUser("venorrak")["data"][0]["id"]
 
@@ -1053,6 +1078,7 @@ Thread.start do
                         "type": "default"
                     }
                     writeToJSON(msg)
+                    treat_comments(data)
 
                 when "channel.ad_break.begin"
                     msg = {

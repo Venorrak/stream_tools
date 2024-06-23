@@ -18,6 +18,7 @@ var rainbow_status = 0.0
 @export var origin_right_eye_scale = 0
 
 @onready var tv_mesh = $RigidBody3D/CollisionShape3D/MeshInstance3D
+@onready var dum = $display/SubViewport/dum
 
 func _init():
 	socket.bind(num_socket, "127.0.0.1", 8300)
@@ -92,3 +93,7 @@ func _process(delta):
 
 func _on_rainbow_timer_timeout():
 	rainbow = false
+
+
+func _on_dum_timer_timeout():
+	dum.visible = false

@@ -5,6 +5,7 @@ var json = JSON.new()
 var num_socket = 5555
 @onready var head = $Tv
 @onready var rainbow_timer = $Tv/rainbow_timer
+@onready var dum_timer = $Tv/dum_timer
 @onready var right_eye = $Tv/display/SubViewport/right_eye
 @onready var left_eye = $Tv/display/SubViewport/left_eye
 @onready var equaliser = $Tv/display/SubViewport/equaliser
@@ -45,9 +46,8 @@ func _process(delta):
 					"change_color":
 						change_face_color(data["data"])
 					"rainbow_on_off":
-						if green_screen.visible == false:
-							head.rainbow = !head.rainbow
-							rainbow_timer.start()
+						head.rainbow = !head.rainbow
+						rainbow_timer.start()
 					"scale_tiny":
 						head.position.x = -4
 					"scale_default":
@@ -57,6 +57,7 @@ func _process(delta):
 						head.rainbow = false
 					"dum_on_off":
 						dum_text.visible = !dum_text.visible
+						dum_timer.start()
 					"brb_on_off":
 						brb.visible = !brb.visible
 					"starting_on_off":

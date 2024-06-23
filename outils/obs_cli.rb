@@ -1,10 +1,6 @@
-class ObsCli
+#class ObsCli
     @data = nil
     @mic_muted = true
-    @obs_password = ""
-    def init(obs_password)
-        @obs_password = obs_password
-    end
 
     def obs_request(method, params)
         begin
@@ -213,7 +209,7 @@ class ObsCli
         }
     end
 
-    def menu()
+    def obs_menu()
         #begin
             system('clear')
             choices = [
@@ -231,7 +227,7 @@ class ObsCli
             case choice
             when 1
                 obs_request(:get_inputs, nil)
-                sleep(0.2)
+                sleep(0.5)
                 mic_uuid = ""
                 @data["d"]["responseData"]["inputs"].each do |input|
                     if input["inputName"] == "Mic/Aux"
@@ -241,7 +237,7 @@ class ObsCli
                 obs_request(:mute_input, [mic_uuid, @mic_muted])
                 @mic_muted = !@mic_muted
                 process_data(true)
-                menu()
+                obs_menu()
             when 2
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
@@ -252,7 +248,7 @@ class ObsCli
                 scene = gets.chomp
                 obs_request(:set_current_scene, [scene])
                 process_data()
-                menu()
+                obs_menu()
             when 3
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
@@ -272,7 +268,7 @@ class ObsCli
                 sleep(0.5)
                 obs_request(:set_item_invisible, [scene_name, @data["d"]["responseData"]["sceneItemId"]])
                 process_data(false)
-                menu()
+                obs_menu()
             when 4
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
@@ -292,13 +288,13 @@ class ObsCli
                 sleep(0.5)
                 obs_request(:set_item_visible, [scene_name, @data["d"]["responseData"]["sceneItemId"]])
                 process_data(false)
-                menu()
+                obs_menu()
             when 5
                 main_menu()
             else
                 puts('Invalid choice')
                 sleep 1
-                menu()
+                obs_menu()
             end
         # rescue
         #     puts('OBS server is not running')
@@ -307,4 +303,4 @@ class ObsCli
         # end
     end
 
-end
+#end
