@@ -45,6 +45,24 @@
         return text;
     }
 
+    function sound_raid(){
+        var audio = new Audio('sounds/sassy2.mp3');
+        audio.volume = 1;
+        audio.play();
+    }
+
+    function sound_alert(){
+        var audio = new Audio('sounds/alert.mp3');
+        audio.volume = 0.1;
+        audio.play();
+    }
+
+    function sound_ad(){
+        var audio = new Audio('sounds/ads.mp3');
+        audio.volume = 0.8;
+        audio.play();
+    }
+
     window.addEventListener('DOMContentLoaded', (event) => {
         var chat = document.getElementById('chat');
 
@@ -66,18 +84,24 @@
                 switch (data[i].type){
                     case 'notif':
                         message.classList.add('notif')
+                        var audio = new Audio('sounds/sassy.mp3');
+                        sound_alert();
                         break;
                     case 'negatif':
                         message.classList.add('negatif')
+                        sound_ad();
                         break;
                     case 'subscribe':
                         message.classList.add('subscibe')
+                        sound_alert();
                         break;
                     case 'cheer':
                         message.classList.add('cheer')
+                        sound_alert();
                         break;
                     case 'raid':
                         message.classList.add('raid')
+                        sound_raid();
                         break;
                 }
                 message.id = 'msg' + i;

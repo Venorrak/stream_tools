@@ -19,6 +19,26 @@
     src: url('Changa-VariableFont_wght.ttf');
 }
 
+@keyframes glow_raid {
+    50% {border-color: #006983;}
+}
+
+@keyframes glow_cheer {
+    50% {border-color: #7a008a;}
+}
+
+@keyframes glow_notif {
+    50% {border-color: rgb(129, 106, 0);}
+}
+
+@keyframes glow_negatif {
+    50% {border-color: rgb(126, 0, 0);}
+}
+
+@keyframes glow_subscibe {
+    50% {border-color: rgb(0, 139, 0);}
+}
+
 .message {
     background-color: #61616162;
     font-weight: bold;
@@ -67,6 +87,7 @@
     margin-bottom: -13px;
     margin-left: 5px;
     font-size:small;
+    text-shadow: 1px 1px 1px #000000;
 }
 
 .name h2 {
@@ -89,18 +110,22 @@ body {
 /* ############################################### */
 .cheer {
     border: 3px solid #e100ff;
+    animation: glow_cheer 1s infinite;
 }
 
 .notif {
-    border: 3px solid rgb(255, 208, 0);
+    border: 3px solid #ffd000;
+    animation: glow_notif 1s infinite;
 }
 
 .negatif {
-    border: 3px solid rgb(255, 0, 0);
+    border: 3px solid #ff0000;
+    animation: glow_negatif 1s infinite;
 }
 
 .subscibe {
-    border: 3px solid rgb(0, 255, 0);
+    border: 3px solid #00ff00;
+    animation: glow_subscibe 1s infinite;
 }
 
 .default {
@@ -109,5 +134,6 @@ body {
 
 .raid {
     border: 3px solid #00ccff;
+    animation: glow_raid 1s infinite;
 }
 /* ############################################### */

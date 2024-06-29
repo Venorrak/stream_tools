@@ -964,9 +964,57 @@ def remove_vip(user_name)
     return rep
 end
 
+def send_message(channel, message)
+    channel_exists = false
+    begin
+        channel_id = getTwitchUser(channel)["data"][0]["id"]
+        channel_exists = true
+    rescue
+        rep = "channel doesn't exist"
+    end
+    if channel_exists == true
+        request_body = {
+            "broadcaster_id": channel_id,
+            "sender_id": @me_id,
+            "message": message
+        }.to_json
+        sleep(1)
+        response = $APItwitch.post("/helix/chat/messages", request_body) do |req|
+            req.headers["Authorization"] = "Bearer #{@token}"
+            req.headers["Client-Id"] = @twitch_bot_id
+            req.headers["Content-Type"] = "application/json"
+        end
+
+        begin
+            rep = JSON.parse(response.body)
+        rescue
+            rep = response.body
+        end
+
+        case response.status
+        when 200
+            p "message sent"
+        when 400
+            p "bad request"
+        when 403
+            p "Forbidden"
+        when 429
+            p "Too many requests"
+        when 422
+            p "Unprocessable Entity"
+        when 409
+            p "conflict"
+        when 401
+            p "Unauthorized"
+        else
+            p "something wrong"
+        end
+    end
+    return rep
+end
 #######################################################################################
 
-def treat_comments(data)
+def treat_commands(data)
     first_frag = data["payload"]["event"]["message"]["fragments"][0]
     if first_frag["type"] == "text"
         words = first_frag["text"].split(" ")
@@ -987,6 +1035,241 @@ def treat_comments(data)
             dum_on_off()
         end
     end
+end
+
+def jake_ror2(data)
+    if data["payload"]["event"]["broadcaster_user_login"] == "jakecreatesstuff"
+        if data["payload"]["event"]["chatter_user_login"] == "jakecreatesstuff"
+            if data["payload"]["event"]["message"]["text"].start_with?("Chest opened! ")
+                text = data["payload"]["event"]["message"]["text"].delete_prefix("Chest opened! ")
+                begin
+                    text.delete_suffix!(" \u{E0000}")
+                end
+                choices = text.split(" | ")
+                choices.length.times do |i|
+                    choices[i] = choices[i].delete_prefix("#{i + 1}: ")
+                end
+                categories = [
+                    [
+                        "Delicate Watch",
+                        "Warbanner",
+                        "Stun Grenade",
+                        "Repulsion Armor Plate",
+                        "Power Elixir",
+                        "Bison Steak",
+                        "Oddly-shaped Opal",
+                        "Bundle of Fireworks",
+                        "Ghor's Tome",
+                        "Old War Stealthkit",
+                        "Bottled Chaos",
+                        "Defensive Microbots",
+                        "H3AD-5T v2",
+                        "Defense Nucleus",
+                        "Planula",
+                        "Titanic Knurl",
+                        "Pearl",
+                        "Queen's Gland",
+                        "Voidsent Flame",
+                        "Safer Spaces",
+                        "Eccentric Vase",
+                        "Blast Shower",
+                        "Foreign Fruit",
+                        "Radar Scanner",
+                        "The Crowdfunder",
+                        "Gnarled Woodsprite",
+                        "Jade Elephant",
+                        "Milky Chrysalis",
+                        "Spinel Tonic",
+                        "Glowing Meteorite",
+                        "Stone Flux Pauldron",
+                        "Eulogy Zero",
+                        "Light Flux Pauldron",
+                        "Shared Design",
+                        "Beads of Fealty"
+                    ],
+                    [
+                        "Cautious Slug",
+                        "Monster Tooth",
+                        "Sticky Bomb",
+                        "Personal Shield Generator",
+                        "Roll of Pennies",
+                        "Lepton Daisy",
+                        "Squid Polyp",
+                        "Razorwire",
+                        "Rose Buckler",
+                        "Shuriken",
+                        "War Horn",
+                        "Spare Drone Parts",
+                        "Brainstalks",
+                        "Happiest Mask",
+                        "Sentient Meat Hook",
+                        "Little Disciple",
+                        "Genesis Loop",
+                        "Empathy Cores",
+                        "Halcyon Seed",
+                        "Pluripotent Larva",
+                        "Lost Seer's Lenses",
+                        "Tentabauble",
+                        "Benthic Bloom",
+                        "Forgive Me Please",
+                        "Molotov (6-Pack)",
+                        "The Back-up",
+                        "Executive Card",
+                        "Super Massive Leech",
+                        "Volcanic Egg",
+                        "Effigy of Grief",
+                        "Essence of Heresy",
+                        "Egocentrism",
+                        "Visions of Heresy"
+                    ],
+                    [
+                        "Armor-Piercing Rounds",
+                        "Energy Drink",
+                        "Rusted Key",
+                        "Fuel Cell",
+                        "Wax Quail",
+                        "Infusion",
+                        "Predatory Instincts",
+                        "Regenerating Scrap",
+                        "Red Whip",
+                        "Harvester's Scythe",
+                        "Berzerker's Pauldron",
+                        "Aegis",
+                        "Ben's Raincoat",
+                        "N'kuhana's Opinion",
+                        "Resonance Disc",
+                        "Hardlight Afterburner",
+                        "Mired Urn",
+                        "Molten Perforator",
+                        "Needletick",
+                        "Goobo Jr.",
+                        "Recycler",
+                        "Disposable Missile Launcher",
+                        "Ocular HUD",
+                        "Sawmerang",
+                        "Helfire Tincture",
+                        "Defiant Gouge",
+                        "Corpsebloom",
+                        "Hooks of Heresy",
+                        "Mercurial Rachis",
+                        "Brittle Crown",
+                        "Strides of Heresy",
+                        "Purity"
+                    ],
+                    [
+                        "Bustling Fungus",
+                        "Medkit",
+                        "Mocha",
+                        "Soldier's Syringe",
+                        "Crowbar",
+                        "Topaz Brooch",
+                        "Hopoo Feather",
+                        "Kjaro's Band",
+                        "Runald's Band",
+                        "Will-o'-the-wisp",
+                        "Bandolier",
+                        "Hunter's Harpoon",
+                        "Old Guillotine",
+                        "Leeching Seed",
+                        "Chronobauble",
+                        "Death Mark",
+                        "Alien Head",
+                        "Pocket I.C.B.M.",
+                        "Shattering Justice",
+                        "Ceremonial Dagger",
+                        "Unstable Tesla Coil",
+                        "Lysate Cell",
+                        "Singularity Band",
+                        "Encrusted Key",
+                        "Newly Hatched Zoea",
+                        "Gorag's Opus",
+                        "Preon Accumulator",
+                        "Transcendence",
+                        "Shaped Glass",
+                        "Focused Convergence"
+                    ],
+                    [
+                        "Dio's Best Friend",
+                        "Focus Crystal",
+                        "Gasoline",
+                        "Backup Magazine",
+                        "Lens-Maker's Glasses",
+                        "Tougher Times",
+                        "Paul's Goat Hoof",
+                        "Tri-Tip Dagger",
+                        "Ignition Tank",
+                        "Ukulele",
+                        "Shipping Request Form",
+                        "AtG Missile Mk. 1",
+                        "57 Leaf Clover",
+                        "Brilliant Behemoth",
+                        "Frost Relic",
+                        "Interstellar Desk Plant",
+                        "Rejuvenation Rack",
+                        "Symbiotic Scorpion",
+                        "Soulbound Catalyst",
+                        "Wake of Vultures",
+                        "Laser Scope",
+                        "Plasma Shrimp",
+                        "Weeping Fungus",
+                        "Polylute",
+                        "Shatterspleen",
+                        "Charged Perforator",
+                        "Trophy Hunter's Tricorn",
+                        "Primordial Cube",
+                        "Royal Capacitor",
+                        "Gesture of the Drowned",
+                        "Irradiant Pearl"
+                    ]
+                ]
+                results = [nil, nil, nil]
+                categories.each do |category|
+                    category.each do |item|
+                        choices.each do |choice|
+                            if item.downcase == choice.downcase
+                                results[choices.index(choice)] = categories.index(category)
+                            end
+                        end
+                    end
+                end
+                results.each do |result|
+                    if result.nil?
+                        results[results.index(result)] = 6
+                    end
+                end
+                show = {}
+                choices.each do |choice|
+                    show[choice] = results[choices.index(choice)]
+                end
+                ap show
+                lowest_number_index = results.index(results.min)
+
+                rep = send_message("jakecreatesstuff", "#{lowest_number_index + 1}")
+            end
+        end
+    end
+end
+
+def subscibe_to_jake_chat(session_id)
+    channel_id = getTwitchUser("jakecreatesstuff")["data"][0]["id"]
+    data = {
+        "type" => "channel.chat.message",
+        "version" => "1",
+        "condition" => {
+            "broadcaster_user_id" => channel_id,
+            "user_id" => @me_id
+        },
+        "transport" => {
+            "method" => "websocket",
+            "session_id" => session_id
+        }
+    }.to_json
+    response = $APItwitch.post("/helix/eventsub/subscriptions", data) do |req|
+        req.headers["Authorization"] = "Bearer #{@token}"
+        req.headers["Client-Id"] = @twitch_bot_id
+        req.headers["Content-Type"] = "application/json"
+    end
+    return JSON.parse(response.body)
 end
 
 #######################################################################################
@@ -1019,13 +1302,14 @@ Thread.start do
                 subscriptions.each do |sub|
                     rep = subscribeToEventSub(@me_id, data["payload"]["session"]["id"], sub)
                 end
+                #subscibe_to_jake_chat(data["payload"]["session"]["id"])
             end
             if data["metadata"]["message_type"] == "notification"
                 case data["payload"]["subscription"]["type"]
                 when "channel.follow"
                     msg = {
                         "name": "Follow",
-                        "name_color": "yellow",
+                        "name_color": "#ffd000",
                         "message": "#{data["event"]["user_name"]} has followed",
                         "type": "notif"
                     }
@@ -1078,12 +1362,13 @@ Thread.start do
                         "type": "default"
                     }
                     writeToJSON(msg)
-                    treat_comments(data)
+                    treat_commands(data)
+                    #jake_ror2(data)
 
                 when "channel.ad_break.begin"
                     msg = {
                         "name": "Ad Break",
-                        "name_color": "red",
+                        "name_color": "#ff0000",
                         "message": "ads playing for #{data["event"]["duration_seconds"]} seconds",
                         "type": "negatif"
                     }
@@ -1093,7 +1378,7 @@ Thread.start do
                     if data["event"]["is_gift"] == false
                         msg = {
                             "name": "Subscribe",
-                            "name_color": "green",
+                            "name_color": "#00ff00",
                             "message": "#{data["event"]["user_name"]} has subscribed",
                             "type": "subscribe"
                         }
@@ -1104,14 +1389,14 @@ Thread.start do
                     if data["event"]["is_anonymous"] == false
                         msg = {
                             "name": "Gift Sub",
-                            "name_color": "green",
+                            "name_color": "#00ff00",
                             "message": "anonymous has gifted #{data["event"]["total"]} subs",
                             "type": "subscribe"
                         }
                     else
                         msg = {
                             "name": "Gift Sub",
-                            "name_color": "green",
+                            "name_color": "#00ff00",
                             "message": "#{data["event"]["gifter_name"]} has gifted #{data["event"]["total"]} subs",
                             "type": "subscribe"
                         }
@@ -1121,7 +1406,7 @@ Thread.start do
                 when "channel.subscription.message"
                     msg = {
                         "name": "Resub",
-                        "name_color": "green",
+                        "name_color": "#00ff00",
                         "message": "#{data["event"]["user_name"]} has resubscribed \n#{data["event"]["message"]["text"]}",
                         "type": "subscibe"
                     }
@@ -1131,14 +1416,14 @@ Thread.start do
                     if data["event"]["is_anonymous"] == false
                         msg = {
                             "name": "Cheers",
-                            "name_color": "purple",
+                            "name_color": "#e100ff",
                             "message": "#{data["event"]["user_name"]} has cheered #{data["event"]["bits"]} bits",
                             "type": "cheer"
                         }
                     else
                         msg = {
                             "name": "Cheers",
-                            "name_color": "purple",
+                            "name_color": "#e100ff",
                             "message": "anonymous has cheered #{data["event"]["bits"]} bits",
                             "type": "cheer"
                         }
@@ -1148,7 +1433,7 @@ Thread.start do
                 when "channel.raid"
                     msg = {
                         "name": "Raid",
-                        "name_color": "pink",
+                        "name_color": "#00ccff",
                         "message": "#{data["event"]["from_broadcaster_user_name"]} has raided with #{data["event"]["viewers"]} viewers",
                         "type": "raid"
                     }

@@ -6,6 +6,7 @@ var num_socket = 5555
 @onready var head = $Tv
 @onready var rainbow_timer = $Tv/rainbow_timer
 @onready var dum_timer = $Tv/dum_timer
+@onready var dum = $Tv/display/SubViewport/dum
 @onready var right_eye = $Tv/display/SubViewport/right_eye
 @onready var left_eye = $Tv/display/SubViewport/left_eye
 @onready var equaliser = $Tv/display/SubViewport/equaliser
@@ -68,6 +69,7 @@ func change_face_color(couleur : Color):
 		equaliser_bars[i].color = couleur
 		right_eye.modulate = couleur
 		left_eye.modulate = couleur
+		dum.label_settings.font_color = couleur
 		
 func reset_tv():
 	head.rotation = Vector3(0, 0, 0)

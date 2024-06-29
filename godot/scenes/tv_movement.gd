@@ -83,7 +83,6 @@ func _process(delta):
 		if frozen == false:
 			left_eye.position.x = origin_left_eye_postion.x + (-left_left_eye_delta + right_left_eye_delta) * 7
 			right_eye.position.x = origin_right_eye_position.x + (-left_right_eye_delta + right_left_eye_delta) * 7
-		
 		if rainbow == true:
 			tv_mesh.get_active_material(0).albedo_color = Color.from_hsv(rainbow_status, 1.0, 1.0, 1.0)
 			rainbow_status += 0.02

@@ -60,7 +60,6 @@ offset_bottom = -125.625
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(17.305, 17.305)
-theme_override_colors/font_color = Color(0.305882, 0.435294, 1, 1)
 text = "DUM"
 label_settings = SubResource("LabelSettings_fpn6e")
 justification_flags = 0
