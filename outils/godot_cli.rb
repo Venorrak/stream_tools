@@ -1,7 +1,7 @@
 
 def godot_init()
     begin
-        @godot_server = TCPSocket.new('127.0.0.1', 5555)
+        @godot_server = TCPSocket.new('172.31.224.1', 5555)
     rescue
         puts('Godot server is not running')
     end
@@ -14,7 +14,7 @@ def reset_godot_connection()
         rescue
             puts('godot server is not connected')
         end
-        @godot_server = TCPSocket.new('127.0.0.1', 5555)
+        @godot_server = TCPSocket.new('172.31.224.1', 5555)
     rescue
         puts('Godot server is not running')
     end

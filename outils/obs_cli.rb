@@ -6,7 +6,7 @@
         begin
             Thread.start do
                 EM.run do
-                    ws = Faye::WebSocket::Client.new("ws://localhost:4455")
+                    ws = Faye::WebSocket::Client.new("ws://192.168.0.29:4455")
                     function_called = false
                     ws.on :open do |event|
                         #p [:open]
@@ -43,7 +43,7 @@
                         end
                     end
                     ws.on :close do |event|
-                        #p [:close, event.code, event.reason]
+                        p [:close, event.code, event.reason]
                         ws = nil
                     end
                 end
