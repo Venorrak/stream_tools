@@ -15,7 +15,7 @@ def main():
         msg = data.decode()
         #print(msg)
         landmarks = json.loads(msg)
-        #`print(landmarks)
+        print(landmarks)
 
 if __name__ == '__main__':
     main()

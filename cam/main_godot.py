@@ -5,7 +5,7 @@ import time
 import json
 import socket
 
-HOST = "127.0.0.1"
+HOST = "172.31.224.1"
 PORT = 12345
 
 def getXY(pt):
@@ -29,7 +29,7 @@ def getLandmarks(cap, face_mesh):
     return landmarks
 
 def main():
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -46,6 +46,7 @@ def main():
             #send json to godot with socket
             now_time = time.time()
             if now_time - last_time > 0:
+                print("sent")
                 sock.sendto(msg.encode("ascii"), (HOST, PORT))
                 last_time = time.time()
         if cv2.waitKey(1) & 0xFF == ord('q'):

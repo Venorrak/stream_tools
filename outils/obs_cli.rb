@@ -43,7 +43,7 @@
                         end
                     end
                     ws.on :close do |event|
-                        p [:close, event.code, event.reason]
+                        #p [:close, event.code, event.reason]
                         ws = nil
                     end
                 end

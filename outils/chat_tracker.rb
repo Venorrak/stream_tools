@@ -30,7 +30,7 @@ def getAccess()
     #https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#device-code-grant-flow
     response = $server.post("/oauth2/device") do |req|
         req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-        req.body = "client_id=#{@twitch_bot_id}&scopes=chat:read+chat:edit+user:bot+user:write:chat+channel:bot+user:manage:whispers+channel:moderate+moderator:read:followers+user:read:chat+channel:read:ads+channel:read:subscriptions+bits:read+moderator:manage:shoutouts+moderator:manage:announcements+channel:edit:commercial+moderator:manage:shoutouts+channel:manage:raids+moderator:read:chatters+channel:manage:vips+channel:manage:ads"
+        req.body = "client_id=#{@twitch_bot_id}&scopes=chat:read+chat:edit+user:bot+user:write:chat+channel:bot+user:manage:whispers+channel:moderate+moderator:read:followers+user:read:chat+channel:read:ads+channel:read:subscriptions+bits:read+moderator:manage:shoutouts+moderator:manage:announcements+channel:edit:commercial+moderator:manage:shoutouts+channel:manage:raids+moderator:read:chatters+channel:manage:vips+channel:manage:ads+channel:manage:broadcast"
     end
     rep = JSON.parse(response.body)
     device_code = rep["device_code"]
@@ -97,6 +97,7 @@ def twitch_menu()
         "unban user",
         "add vip",
         "remove vip",
+        "send message",
         "back to main menu"
     ]
     system('clear')
@@ -263,6 +264,17 @@ def twitch_menu()
             quick_end_case()
         end
     when 20
+        print('Enter message: ')
+        message = gets.chomp
+        print('Enter channel: ')
+        channel = gets.chomp
+        if message != "" && channel != ""
+            rep = send_message(channel, message)
+            quick_end_case(rep)
+        else
+            quick_end_case()
+        end
+    when 21
         main_menu()
     else
         puts('Invalid choice')
@@ -524,34 +536,13 @@ end
 #function to get the channel stream info with the API
 def change_stream_title(title)
     data = {
-        "title": title,
-        "content_classification_labels": [
-            {
-                "id": "Gambling",
-                "is_enabled": "false"
-            },
-            {
-                "id": "ProfanityVulgarity",
-                "is_enabled": "false"
-            },
-            {
-                "id": "ViolentGraphic",
-                "is_enabled": "false"
-            },
-            {
-                "id": "SexualThemes",
-                "is_enabled": "false"
-            },
-            {
-                "id": "DrugsIntoxication",
-                "is_enabled": "false"
-            }
-        ]
-    }
-    response = $APItwitch.patch("/helix/channels?broadcaster_id=#{@me_id}", data) do |req|
+        "title": title
+    }.to_json
+    response = $APItwitch.patch("/helix/channels?broadcaster_id=#{@me_id}") do |req|
         req.headers["Authorization"] = "Bearer #{@token}"
         req.headers["Client-Id"] = @twitch_bot_id
         req.headers["Content-Type"] = "application/json"
+        req.body = data
     end
 
     case response.status
@@ -808,7 +799,7 @@ def ban_user(user_name, duration, reason)
         end
         data = {
             "data": pre_data
-        }
+        }.to_json
         response = $APItwitch.post("/helix/moderation/bans?broadcaster_id=#{@me_id}&moderator_id=#{@me_id}", data) do |req|
             req.headers["Authorization"] = "Bearer #{@token}"
             req.headers["Client-Id"] = @twitch_bot_id

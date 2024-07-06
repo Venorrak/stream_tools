@@ -25,7 +25,7 @@ def send_to_godot(message)
     begin
         @godot_server.puts(message.to_json)
     rescue
-        reset_connection()
+        reset_godot_connection()
         @godot_server.puts(message.to_json)
     end
 end
