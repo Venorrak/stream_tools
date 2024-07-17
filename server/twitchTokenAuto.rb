@@ -13,6 +13,7 @@ gemfile do
 end
 require 'faraday'
 require 'sinatra'
+require_relative 'secret.rb'
 
 set :port, 6543
 set :bind, '0.0.0.0'

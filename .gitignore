@@ -16,3 +16,4 @@ outils/chat/sounds/sassy.mp3
 outils/chat/sounds/alert.mp3
 outils/chat/sounds/ads.mp3
 outils/chat/chat.json
+server/secret.rb
