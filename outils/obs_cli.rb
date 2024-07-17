@@ -209,6 +209,14 @@
         }
     end
 
+    def verify_data()
+        if @data.nil?
+            puts('OBS server is not running')
+            sleep 1
+            main_menu()
+        end
+    end
+
     def obs_menu()
         #begin
             system('clear')
@@ -229,6 +237,7 @@
                 obs_request(:get_inputs, nil)
                 sleep(0.5)
                 mic_uuid = ""
+                verify_data()
                 @data["d"]["responseData"]["inputs"].each do |input|
                     if input["inputName"] == "Mic/Aux"
                         mic_uuid = input["inputUuid"]
@@ -241,6 +250,7 @@
             when 2
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
+                verify_data()
                 @data["d"]["responseData"]["scenes"].each do |scene|
                     p scene["sceneName"]
                 end
@@ -252,6 +262,7 @@
             when 3
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
+                verify_data()
                 @data["d"]["responseData"]["scenes"].each do |scene|
                     p scene["sceneName"]
                 end
@@ -272,6 +283,7 @@
             when 4
                 obs_request(:get_scene_list, nil)
                 sleep(0.5)
+                verify_data()
                 @data["d"]["responseData"]["scenes"].each do |scene|
                     p scene["sceneName"]
                 end

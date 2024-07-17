@@ -1,7 +1,9 @@
 
 def godot_init()
     begin
-        @godot_server = TCPSocket.new('172.31.224.1', 5555)
+        Timeout::timeout(2) {
+            @godot_server = TCPSocket.new('172.31.224.1', 5555)
+        }
     rescue
         puts('Godot server is not running')
     end

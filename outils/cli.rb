@@ -9,6 +9,7 @@ require "awesome_print"
 require "base64"
 require "digest"
 require "securerandom"
+require 'timeout'
 
 gemfile do
     source "https://rubygems.org"
