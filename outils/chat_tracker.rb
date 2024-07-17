@@ -20,6 +20,8 @@ $emotes_conn = Faraday.new(url: "https://static-cdn.jtvnw.net") do |conn|
     conn.request :url_encoded
 end
 
+$lastRefresh = Time.now
+
 def do_sleep(x = 1)
     sleep(x)
 end
@@ -1267,6 +1269,17 @@ end
 
 getAccess()
 @me_id = getTwitchUser("venorrak")["data"][0]["id"]
+
+Thread.start do
+    loop do
+        sleep(60)
+        now = Absolutetime.now
+        if (now - $lastRefresh) > 7200
+            refreshAccess()
+            $lastRefresh = now
+        end
+    end
+end
 
 Thread.start do
     EM.run {
