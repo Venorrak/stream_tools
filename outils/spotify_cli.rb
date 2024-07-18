@@ -62,18 +62,20 @@ def getPlaybackState()
   response = $spotify_api_server.get("/v1/me/player") do |req|
     req.headers["Authorization"] = "Bearer #{$token}"
   end
-  rep = JSON.parse(response.body)
-  current_time = rep["progress_ms"]
-  total_time = rep["item"]["duration_ms"]
-  playbackDisplay(current_time, total_time)
+  begin
+    rep = JSON.parse(response.body)
+    current_time = rep["progress_ms"]
+    total_time = rep["item"]["duration_ms"]
+    playbackDisplay(current_time, total_time)
+  end
 end
 
 def playbackDisplay(current_time, total_time)
   system('clear')
-  num_segments = 20
+  num_segments = 100
   print("[")
   total_segments = (current_time * num_segments) / total_time
-  num_segments.times do
+  total_segments.times do
     print("=")
   end
   (num_segments - total_segments).times do
@@ -91,6 +93,6 @@ spotify_menu()
 Thread.start do
   loop do
       sleep(3000)
-      @token = getAccess()
+      $token = getAccess()
   end
 end

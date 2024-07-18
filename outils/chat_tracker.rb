@@ -983,21 +983,23 @@ def treat_commands(data)
         words = first_frag["text"].split(" ")
         case words[0]
         when "!color"
-            p "color"
             color = words[1]
             if color.match?(/^#[0-9A-F]{6}$/i)
                 color = color.delete_prefix("#")
                 change_color2(color)
             end
-
         when "!rainbow"
-            p "rainbow"
             rainbow_on_off()
         when "!dum"
-            p "dum"
             dum_on_off()
+        when "!discord"
+            shareDiscord()
         end
     end
+end
+
+def shareDiscord()
+    send_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
 end
 
 def jake_ror2(data)
