@@ -29,7 +29,8 @@ def main_menu()
     puts "1. godot"
     puts "2. twitch"
     puts "3. obs"
-    puts "4. exit"
+    puts "4. spotify"
+    puts "5. exit"
     print "Enter your choice: "
     choice = gets.chomp.to_i
     case choice
@@ -40,6 +41,8 @@ def main_menu()
     when 3
         obs_menu()
     when 4
+        spotify_menu()
+    when 5
         exit
     else
         puts "Invalid choice"
