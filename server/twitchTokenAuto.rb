@@ -27,7 +27,7 @@ $server = Faraday.new(url: "https://id.twitch.tv") do |conn|
 end
 
 get '/' do
-  if request.env['HTTP_AUTHORIZATION'] == "|)0ntGe7|)0xeD"
+  if request.env['HTTP_AUTHORIZATION'] == $twitch_safety_string
     return [
       200,
       {"Content-Type" => "application/json"},
@@ -77,7 +77,7 @@ getAccess()
 Thread.start do
   loop do
       sleep(60)
-      now = Absolutetime.now
+      now = AbsoluteTime.now
       if (now - $lastRefresh) > 7200
           refreshAccess()
           $lastRefresh = now
