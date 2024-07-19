@@ -103,8 +103,9 @@ class OBS
   def set_mic_muted(muted)
     @mic_muted = muted
   end
-
-  # OBS calls
+  #################################
+  ##         OBS calls           ##
+  #################################
 
   def get_stats()
     return {
