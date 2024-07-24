@@ -46,20 +46,20 @@
     }
 
     function sound_raid(){
-        var audio = new Audio('sounds/sassy2.mp3');
-        audio.volume = 1;
+        var audio = new Audio('sounds/raid.mp3');
+        audio.volume = 0.7;
         audio.play();
     }
 
     function sound_alert(){
-        var audio = new Audio('sounds/alert.mp3');
-        audio.volume = 0.1;
+        var audio = new Audio('sounds/yay.mp3');
+        audio.volume = 0.7;
         audio.play();
     }
 
     function sound_ad(){
         var audio = new Audio('sounds/ads.mp3');
-        audio.volume = 0.8;
+        audio.volume = 0.4;
         audio.play();
     }
 
@@ -84,7 +84,6 @@
                 switch (data[i].type){
                     case 'notif':
                         message.classList.add('notif')
-                        var audio = new Audio('sounds/sassy.mp3');
                         sound_alert();
                         break;
                     case 'negatif':

@@ -484,7 +484,12 @@ Thread.start do
                   msg = {
                       "name": "Follow",
                       "name_color": "#ffd000",
-                      "message": "#{data["event"]["user_name"]} has followed",
+                      "message": [
+                        {
+                          "type": "text",
+                          "content": "#{data["event"]["user_name"]} has followed"
+                        }
+                      ],
                       "type": "notif"
                   }
                   $twitch.writeToJSON(msg)
@@ -543,7 +548,12 @@ Thread.start do
                   msg = {
                       "name": "Ad Break",
                       "name_color": "#ff0000",
-                      "message": "ads playing for #{data["event"]["duration_seconds"]} seconds",
+                      "message": [
+                        {
+                          "type": "text",
+                          "content": "ads playing for #{data["event"]["duration_seconds"]} seconds"
+                        }
+                      ],
                       "type": "negatif"
                   }
                   $twitch.writeToJSON(msg)
@@ -553,7 +563,12 @@ Thread.start do
                       msg = {
                           "name": "Subscribe",
                           "name_color": "#00ff00",
-                          "message": "#{data["event"]["user_name"]} has subscribed",
+                          "message": [
+                            {
+                              "type": "text",
+                              "content": "#{data["event"]["user_name"]} has subscribed"
+                            }
+                          ],
                           "type": "subscribe"
                       }
                       $twitch.writeToJSON(msg)
@@ -564,14 +579,24 @@ Thread.start do
                       msg = {
                           "name": "Gift Sub",
                           "name_color": "#00ff00",
-                          "message": "anonymous has gifted #{data["event"]["total"]} subs",
+                          "message": [
+                            {
+                              "type": "text",
+                              "content": "anonymous has gifted #{data["event"]["total"]} subs"
+                            }
+                          ],
                           "type": "subscribe"
                       }
                   else
                       msg = {
                           "name": "Gift Sub",
                           "name_color": "#00ff00",
-                          "message": "#{data["event"]["gifter_name"]} has gifted #{data["event"]["total"]} subs",
+                          "message": [
+                            {
+                              "type": "text",
+                              "content": "#{data["event"]["gifter_name"]} has gifted #{data["event"]["total"]} subs"
+                            }
+                          ],
                           "type": "subscribe"
                       }
                   end
@@ -581,7 +606,12 @@ Thread.start do
                   msg = {
                       "name": "Resub",
                       "name_color": "#00ff00",
-                      "message": "#{data["event"]["user_name"]} has resubscribed \n#{data["event"]["message"]["text"]}",
+                      "message": [
+                        {
+                          "type": "text",
+                          "content": "#{data["event"]["user_name"]} has resubscribed :\n #{data["event"]["message"]["text"]}"
+                        }
+                      ],
                       "type": "subscibe"
                   }
                   $twitch.writeToJSON(msg)
@@ -591,14 +621,22 @@ Thread.start do
                       msg = {
                           "name": "Cheers",
                           "name_color": "#e100ff",
-                          "message": "#{data["event"]["user_name"]} has cheered #{data["event"]["bits"]} bits",
+                          "message": [{
+                              "type": "text",
+                              "content": "#{data["event"]["user_name"]} has cheered #{data["event"]["bits"]} bits"
+                          }],
                           "type": "cheer"
                       }
                   else
                       msg = {
                           "name": "Cheers",
                           "name_color": "#e100ff",
-                          "message": "anonymous has cheered #{data["event"]["bits"]} bits",
+                          "message": [
+                            {
+                              "type": "text",
+                              "content": "anonymous has cheered #{data["event"]["bits"]} bits"
+                            }
+                          ],
                           "type": "cheer"
                       }
                   end
@@ -608,7 +646,12 @@ Thread.start do
                   msg = {
                       "name": "Raid",
                       "name_color": "#00ccff",
-                      "message": "#{data["event"]["from_broadcaster_user_name"]} has raided with #{data["event"]["viewers"]} viewers",
+                      "message": [
+                        {
+                          "type": "text",
+                          "content": "#{data["event"]["from_broadcaster_user_name"]} has raided with #{data["event"]["viewers"]} viewers !"
+                        }
+                      ],
                       "type": "raid"
                   }
                   $twitch.writeToJSON(msg)
