@@ -1,0 +1,72 @@
+@font-face {
+    font-family: bebas_neue;
+    src: url('BebasNeue-Regular.ttf');
+}
+
+#overlay {
+    font-family: 'bebas_neue';
+    height: 100px;
+    width: 300px;
+    background-color: rgb(78, 78, 78);
+    display: flex;
+    border-radius: 20px;
+    border: 2px solid rgb(0, 0, 0);
+}
+
+#progressBar {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    height: 5px;
+    max-width: 300px;
+    width: 50%;
+    transition: 0.5s cubic-bezier(0.075, 0.82, 0.165, 1);
+    background: rgb(156, 156, 156);
+    position: fixed;
+}
+
+#left {
+    width: 100px;
+    display: flex;
+    height: 100%;
+    align-items: center;
+}
+
+#image {
+    width: 80px;
+    height: auto;
+    margin: 0 auto;
+    border-radius: 20px;
+}
+
+p {
+    margin: 0;
+}
+
+#title {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+#artist {
+    display: flex;
+    align-items: center;
+    height: 50%;
+}
+
+#top {
+    height: 50%;
+    width: 100%;
+}
+
+#bottom {
+    height: 50%;
+    width: 100%;
+}
+
+#right {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
