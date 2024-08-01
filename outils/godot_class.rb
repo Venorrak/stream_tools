@@ -3,7 +3,7 @@ class Godot
   def initialize
     begin
       Timeout::timeout(2) {
-        @godot_server = TCPSocket.new('172.31.224.1', 5555)
+        @godot_server = TCPSocket.new('172.28.224.1', 5555)
       }
     rescue
       puts('Godot server is not running')
@@ -17,7 +17,7 @@ class Godot
       rescue
         puts('godot server is not connected')
       end
-      @godot_server = TCPSocket.new('172.31.224.1', 5555)
+      @godot_server = TCPSocket.new('172.28.224.1', 5555)
     rescue
       puts('Godot server is not running')
     end

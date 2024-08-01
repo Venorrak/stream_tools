@@ -3,24 +3,35 @@
     src: url('BebasNeue-Regular.ttf');
 }
 
+html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: flex-start; /* Align items at the top */
+    background-color:transparent;
+}
+
 #overlay {
     font-family: 'bebas_neue';
     height: 100px;
     width: 300px;
-    background-color: rgb(78, 78, 78);
+    background-color: rgb(145, 145, 145);
     display: flex;
-    border-radius: 20px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
     border: 2px solid rgb(0, 0, 0);
+    border-top: 0px;
+    overflow: hidden;
+    transition: 0.5s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
 #progressBar {
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
     height: 5px;
     max-width: 300px;
-    width: 50%;
+    width: 300px;
     transition: 0.5s cubic-bezier(0.075, 0.82, 0.165, 1);
-    background: rgb(156, 156, 156);
+    background: rgb(255, 0, 0);
     position: fixed;
 }
 
@@ -28,6 +39,8 @@
     width: 100px;
     display: flex;
     height: 100%;
+    margin-left: 10px;
+    margin-right: 10px;
     align-items: center;
 }
 
@@ -50,22 +63,24 @@ p {
 
 #artist {
     display: flex;
-    align-items: center;
-    height: 50%;
+    align-items: top;
+    height: 100%;
 }
 
 #top {
     height: 50%;
     width: 100%;
+    overflow: hidden;
 }
 
 #bottom {
     height: 50%;
     width: 100%;
+    overflow: hidden;
 }
 
 #right {
-    width: 50%;
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;

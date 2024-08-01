@@ -10,6 +10,7 @@ require "base64"
 require "digest"
 require "securerandom"
 require 'timeout'
+require 'websocket-eventmachine-server'
 
 gemfile do
   source "https://rubygems.org"
@@ -21,10 +22,15 @@ require_relative "secret.rb"
 require_relative "twitch_class.rb"
 require_relative "obs_class.rb"
 require_relative "godot_class.rb"
+require_relative "spotify_class.rb"
 
 $twitch = Twitch.new(@twitch_bot_id, $twitch_token_password)
 $obs = OBS.new(@obs_password)
 $godot = Godot.new()
+$spotify = Spotify.new($twitch_token_password)
+
+$clients = []
+
 
 def twitch_menu()
   choices = [
@@ -409,13 +415,95 @@ def main_menu()
   when 2
     twitch_menu()
   when 3
-    obs_menu() 
+    obs_menu()
+  when 4
+    spotify_menu()
   when 5
     exit
   else
     puts('Invalid choice')
     sleep(1)
     main_menu()
+  end
+end
+
+def spotify_menu()
+  choices = [
+      'get playback state',
+      "resume track",
+      "pause track",
+      "skip track",
+      "previous track",
+      "set volume",
+      "get queue",
+      "add track to queue",
+      "back"
+  ]
+  system('clear')
+  choices.each_with_index do |choice, index|
+      puts("#{index + 1}. #{choice}")
+  end
+  print('Enter your choice: ')
+  choice = gets.chomp.to_i
+  begin
+    case choice
+    when 1
+      ap $spotify.getPlaybackState()
+      gets
+      spotify_menu()
+    when 2
+      $spotify.resumeTrack()
+      gets
+      spotify_menu()
+    when 3
+      $spotify.pauseTrack()
+      gets
+      spotify_menu()
+    when 4
+      $spotify.skipTrack()
+      gets
+      spotify_menu()
+    when 5
+      $spotify.previousTrack()
+      gets
+      spotify_menu()
+    when 6
+      print('Enter volume: ')
+      volume = gets.chomp.to_i
+      $spotify.setVolume(volume)
+      gets
+      spotify_menu()
+    when 7 
+      $spotify.getQueue()
+      gets
+      spotify_menu()
+    when 8
+      print('Enter url: ')
+      url = gets.chomp
+      uri = getUriFromUrl(url)
+      if uri != nil
+        if $spotify.isThisARealSong(uri)
+          $spotify.addTrackToQueue(uri)
+        else
+          puts('Invalid song')
+        end
+      else
+        puts('Invalid url')
+      end
+      gets
+      spotify_menu()
+    when 9
+      main_menu()
+    else
+        puts('Invalid choice')
+        sleep(1)
+        spotify_menu()
+    end
+  
+  rescue => exception
+    puts(exception)
+    $spotify.getAccess()
+    spotify_menu()
   end
 end
 
@@ -437,9 +525,11 @@ def treat_twitch_commands(data)
       when "!discord"
         $twitch.send_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
       when "!commands"
-        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !discord, !commands")
+        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
       when "!c"
-        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !discord, !commands")
+        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
+      when "!song"
+        $spotify.sendToAll({"type": "show"}.to_json, $clients)
       end
   end
 end
@@ -448,6 +538,13 @@ Thread.start do
   loop do
       sleep(7000)
       $twitch.getAccess()
+  end
+end
+
+Thread.start do
+  loop do
+      sleep(60)
+      $spotify.getAccess()
   end
 end
 
@@ -663,6 +760,40 @@ Thread.start do
         #p [:close, event.code, event.reason, "twitch"]
       end
   }
+end
+
+Thread.start do
+  EM.run do
+    WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5962) do |ws|
+      ws.onopen do
+        $clients << ws
+        p 'Client connected'
+        playback = $spotify.getPlaybackState()
+        data = {
+          "type" => "song",
+          "name" => playback["item"]["name"],
+          "artist" => playback["item"]["artists"][0]["name"],
+          "image" => playback["item"]["album"]["images"][0]["url"],
+          "progress_ms" => playback["progress_ms"],
+          "duration_ms" => playback["item"]["duration_ms"]
+        }
+        $spotify.sendToAll(data.to_json, $clients)
+      end
+
+      ws.onmessage do |msg|
+        p msg
+      end
+
+      ws.onclose do
+        $clients.delete(ws)
+        ws.close
+      end
+
+      ws.onerror do |error|
+        puts "Error: #{error}"
+      end
+    end
+  end
 end
 
 main_menu()

@@ -9,7 +9,7 @@ class OBS
     begin
       Thread.start do
         EM.run do
-          ws = Faye::WebSocket::Client.new("ws://192.168.0.29:4455")
+          ws = Faye::WebSocket::Client.new("ws://192.168.0.18:4455")
           function_called = false
 
           ws.on :open do |event|
