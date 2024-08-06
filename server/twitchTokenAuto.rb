@@ -20,7 +20,7 @@ set :bind, '0.0.0.0'
 
 $token = nil
 $refresh_token = nil
-$lastRefresh = Time.now
+$lastRefresh = AbsoluteTime.now
 
 $server = Faraday.new(url: "https://id.twitch.tv") do |conn|
   conn.request :url_encoded
