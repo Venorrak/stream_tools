@@ -46,7 +46,7 @@ socket.onmessage = function(event){
         var chat = document.getElementById('chat');
         var message = document.createElement('div');
         message.className = 'message';
-        switch (data.data.type){
+        switch (data.payload.type){
             case 'notif':
                 message.classList.add('notif')
                 sound_alert();
@@ -71,10 +71,10 @@ socket.onmessage = function(event){
         var name = document.createElement('div');
         name.className = 'name';
         var nameH1 = document.createElement('h2');
-        nameH1.innerHTML = purifyString(data.data.name)
-        nameH1.style.color = data.data.name_color;
+        nameH1.innerHTML = purifyString(data.payload.name)
+        nameH1.style.color = data.payload.name_color;
         var nameImg = document.createElement('img');
-        nameImg.src = data.data.profile_image_url;
+        nameImg.src = data.payload.profile_image_url;
         nameImg.alt = '';
         nameImg.className = 'profile';
         name.appendChild(nameImg);
@@ -84,7 +84,7 @@ socket.onmessage = function(event){
         var dataP = document.createElement('p');
         var line = document.createElement('hr');
 
-        dataP.innerHTML = build_message(data.data.message);
+        dataP.innerHTML = build_message(data.payload.message);
 
         dataDiv.appendChild(dataP);
         message.appendChild(name);

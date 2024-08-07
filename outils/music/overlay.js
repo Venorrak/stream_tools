@@ -8,7 +8,7 @@ socket.onopen = function (event) {
 socket.onmessage = function (event) {
     var data = JSON.parse(event.data);
     if (data.to == "spotifyOverlay"){
-        var msg = data.data;
+        var msg = data.payload;
         if (msg.type === "song"){
             updateOverlay(msg);
             updateProgress(msg.progress_ms, msg.duration_ms);

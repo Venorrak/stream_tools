@@ -48,7 +48,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -60,7 +59,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -72,7 +70,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -84,7 +81,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -98,7 +94,6 @@ class Godot
         'data': color
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -121,7 +116,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -133,7 +127,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -145,7 +138,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -157,7 +149,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 
@@ -169,7 +160,6 @@ class Godot
         'data': {}
       }
       send_to_godot(msg)
-      do_sleep()
     end
   end
 

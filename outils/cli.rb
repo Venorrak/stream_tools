@@ -10,7 +10,6 @@ require "base64"
 require "digest"
 require "securerandom"
 require 'timeout'
-require 'websocket-eventmachine-server'
 
 gemfile do
   source "https://rubygems.org"
@@ -24,13 +23,14 @@ require_relative "obs_class.rb"
 require_relative "godot_class.rb"
 require_relative "spotify_class.rb"
 
-$twitch = Twitch.new(@twitch_bot_id, $twitch_token_password)
+$myServer = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
+  conn.request :url_encoded
+end
+
+$twitch = Twitch.new(@twitch_bot_id, $twitch_token_password, $myServer)
 $obs = OBS.new(@obs_password)
 $godot = Godot.new()
-$spotify = Spotify.new($twitch_token_password)
-
-$clients = []
-
+$spotify = Spotify.new($twitch_token_password, $myServer)
 
 def twitch_menu()
   choices = [
@@ -71,6 +71,10 @@ def twitch_menu()
     if message != "" && channel != ""
         status, rep = $twitch.send_message(channel, message)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 2
     print('Enter the username: ')
@@ -78,6 +82,10 @@ def twitch_menu()
     if name != ""
         status = $twitch.shoutout(name)
         $twitch.printResults(status)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 3
     print('Enter the username: ')
@@ -85,6 +93,10 @@ def twitch_menu()
     if name != ""
         rep = $twitch.getTwitchUser(name)
         $twitch.printResults(nil, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 4
     print('Enter the channel name: ')
@@ -92,6 +104,10 @@ def twitch_menu()
     if name != ""
         status, rep = $twitch.get_channel_info(name)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 5
     print('Enter the title: ')
@@ -99,6 +115,10 @@ def twitch_menu()
     if title != ""
         status = $twitch.change_stream_title(title)
         $twitch.printResults(status)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 6
     print('Enter the message (exit to abort): ')
@@ -109,6 +129,10 @@ def twitch_menu()
     if message != "exit"
         status = $twitch.create_announcement(message)
         $twitch.printResults(status)
+    else
+        puts('Aborted')
+        sleep(1)
+        twitch_menu()
     end
   when 7
     print('Enter the username: ')
@@ -116,6 +140,10 @@ def twitch_menu()
     if name != ""
         status, rep = $twitch.create_raid(name)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 8
     status = $twitch.cancel_raid()
@@ -126,6 +154,10 @@ def twitch_menu()
     if length != 0
         status, rep = $twitch.start_commercial(length)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 10
     status, rep = $twitch.snooze_ad()
@@ -134,15 +166,19 @@ def twitch_menu()
     print('Enter the username: ')
     name = gets.chomp
     if name != ""
-        print('Enter the duration (mins, 0 = permanent): ')
-        duration = gets.chomp.to_i
-        print('Enter the reason (optional = ""): ')
-        reason = gets.chomp
-        if reason == ""
-            reason = nil
-        end
-        status, rep = $twitch.ban_user(name, duration, reason)
-        $twitch.printResults(status, rep)
+      print('Enter the duration (mins, 0 = permanent): ')
+      duration = gets.chomp.to_i
+      print('Enter the reason (optional = ""): ')
+      reason = gets.chomp
+      if reason == ""
+          reason = nil
+      end
+      status, rep = $twitch.ban_user(name, duration, reason)
+      $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 12
     print('Enter the username: ')
@@ -150,6 +186,10 @@ def twitch_menu()
     if name != ""
         status, rep = $twitch.unban_user(name)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 13
     print('Enter the username: ')
@@ -157,6 +197,10 @@ def twitch_menu()
     if name != ""
         status = $twitch.add_vip(name)
         $twitch.printResults(status)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 14
     print('Enter the username: ')
@@ -164,6 +208,10 @@ def twitch_menu()
     if name != ""
         status = $twitch.remove_vip(name)
         $twitch.printResults(status)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 15
     print('Enter the channel name: ')
@@ -176,6 +224,10 @@ def twitch_menu()
         end
         status, rep = $twitch.get_channel_follow(name, user)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 16
     status, rep = $twitch.get_viewers()
@@ -186,6 +238,10 @@ def twitch_menu()
     if name != ""
         status, rep = $twitch.get_channel_emotes(name)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 18
     print('Enter the channel name: ')
@@ -193,6 +249,10 @@ def twitch_menu()
     if name != ""
         status, rep = $twitch.get_channel_badge(name)
         $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
     end
   when 19
     status, rep = $twitch.get_global_emotes()
@@ -474,7 +534,7 @@ def spotify_menu()
       gets
       spotify_menu()
     when 7 
-      $spotify.getQueue()
+      ap $spotify.getQueue()
       gets
       spotify_menu()
     when 8
@@ -507,76 +567,30 @@ def spotify_menu()
   end
 end
 
-def treat_twitch_commands(data)
-  first_frag = data["payload"]["event"]["message"]["fragments"][0]
-    if first_frag["type"] == "text"
-      words = first_frag["text"].split(" ")
-      case words[0]
-      when "!color"
-          color = words[1]
-          if color.match?(/^#[0-9A-F]{6}$/i)
-              color = color.delete_prefix("#")
-              $godot.change_color2(color)
-          end
-      when "!rainbow"
-        $godot.rainbow_on_off()
-      when "!dum"
-        $godot.dum_on_off()
-      when "!discord"
-        $twitch.send_message("venorrak", "empty discord server: https://discord.gg/ydJ7NCc8XM")
-      when "!commands"
-        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
-      when "!c"
-        $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
-      when "!song"
-        $spotify.sendToAll({"type": "show"}.to_json, $clients)
-      end
-  end
-end
-
-Thread.start do
-  loop do
-      sleep(7000)
-      $twitch.getAccess()
-  end
-end
-
-Thread.start do
-  loop do
-      sleep(60)
-      $spotify.getAccess()
-  end
-end
-
 Thread.start do
   EM.run do
-    WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5962) do |ws|
-      ws.onopen do
-        $clients << ws
-        playback = $spotify.getPlaybackState()
-        data = {
-          "type" => "song",
-          "name" => playback["item"]["name"],
-          "artist" => playback["item"]["artists"][0]["name"],
-          "image" => playback["item"]["album"]["images"][0]["url"],
-          "progress_ms" => playback["progress_ms"],
-          "duration_ms" => playback["item"]["duration_ms"]
-        }
-        $spotify.sendToAll(data.to_json, $clients)
-      end
+    ws = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
 
-      ws.onmessage do |msg|
-        p msg
-      end
+    ws.on :open do |event|
+      p [:open, "BUS"]
+    end
 
-      ws.onclose do
-        $clients.delete(ws)
-        ws.close
+    ws.on :message do |event|
+      data = JSON.parse(event.data)
+      if data["to"] == "cli" && data["from"] == "BUS"
+        if data["payload"]["type"] == "token_refreshed"
+          case data["payload"]["client"]
+          when "twitch"
+            $twitch.getAccess()
+          when "spotify"
+            $spotify.getAccess()
+          end
+        end
       end
+    end
 
-      ws.onerror do |error|
-        puts "Error: #{error}"
-      end
+    ws.on :close do |event|
+      p [:close, event.code, event.reason, "BUS"]
     end
   end
 end

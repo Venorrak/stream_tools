@@ -1,7 +1,8 @@
 class Spotify
 
-  def initialize(twitch_token_password)
+  def initialize(twitch_token_password, myServer)
     $twitch_token_password = twitch_token_password
+    $myServer = myServer
     getAccess()
   end
 
@@ -11,14 +12,10 @@ class Spotify
     conn.request :url_encoded
   end
 
-  $myServer2 = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
-    conn.request :url_encoded
-  end
-
   ##############################################################
 
   def getAccess()
-    response = $myServer2.get("/token/spotify") do |req|
+    response = $myServer.get("/token/spotify") do |req|
       req.headers["Authorization"] = $twitch_token_password
     end
     rep = JSON.parse(response.body)
@@ -105,29 +102,4 @@ class Spotify
       return false
     end
   end
-
-  def playbackDisplay(current_time, total_time)
-    system('clear')
-    num_segments = 100
-    print("[")
-    total_segments = (current_time * num_segments) / total_time
-    total_segments.times do
-      print("=")
-    end
-    (num_segments - total_segments).times do
-      print(" ")
-    end
-    print("]")
-  end
-
-  def sendToAll(message, clients)
-    clients.each do |client|
-      client.send(message)
-    end
-  end
-
-  def setToken(token)
-    $spotifyToken = token
-  end
-
 end
