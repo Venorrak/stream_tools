@@ -20,7 +20,7 @@ set :bind, '0.0.0.0'
 
 $token = nil
 $refresh_token = nil
-$lastRefresh = Time.now
+$lastRefresh = AbsoluteTime.now
 
 $server = Faraday.new(url: "https://id.twitch.tv") do |conn|
   conn.request :url_encoded
@@ -61,7 +61,6 @@ def getAccess()
 end
 
 def refreshAccess()
-
   #https://dev.twitch.tv/docs/authentication/refresh-tokens/#how-to-use-a-refresh-token
   response = $server.post("/oauth2/token") do |req|
       req.headers["Content-Type"] = "application/x-www-form-urlencoded"

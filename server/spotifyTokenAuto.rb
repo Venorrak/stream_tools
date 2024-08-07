@@ -43,14 +43,6 @@ get '/callback' do
   ]
 end
 
-post '/token' do
-  body = request.body.read
-  body = JSON.parse(body)
-  $token = body['access_token']
-  $refresh_token = body['refresh_token']
-  p "expires in: #{body['expires_in']}"
-end
-
 get '/request' do
   if request.env['HTTP_AUTHORIZATION'] == $spotify_safety_string
     return [
@@ -65,7 +57,6 @@ get '/request' do
       {"error" => "good try buddy"}.to_json
     ]
   end
-
 end
 
 def authorize_spotify()
@@ -92,6 +83,7 @@ def get_spotify_token(code)
   end
   if response.status != 200
     p response.status
+    p "error getting token"
   else
     rep = JSON.parse(response.body)
     $token = rep['access_token']
@@ -102,8 +94,8 @@ end
 
 def refreshAccess()
   body = {
-    grant_type: "refresh_token",
-    refresh_token: $refresh_token
+    "grant_type": "refresh_token",
+    "refresh_token": $refresh_token
   }
   body_encoded = URI.encode_www_form(body)
   response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
@@ -112,10 +104,10 @@ def refreshAccess()
   end
   if response.status != 200
     p response.status
+    p response.body
   else
     rep = JSON.parse(response.body)
     $token = rep['access_token']
-    $refresh_token = rep['refresh_token']
   end
 end
 
@@ -125,7 +117,7 @@ Thread.start do
   loop do
       sleep(60)
       now = AbsoluteTime.now
-      if (now - $lastRefresh) > 3000
+      if (now - $lastRefresh) > 2500
           refreshAccess()
           $lastRefresh = now
       end
