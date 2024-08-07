@@ -1,4 +1,4 @@
-socket = new WebSocket("ws://172.28.230.54:5962");
+socket = new WebSocket("ws://192.168.0.16:5963");
 var connected = false;
 
 socket.onopen = function (event) {
@@ -7,21 +7,25 @@ socket.onopen = function (event) {
 
 socket.onmessage = function (event) {
     var data = JSON.parse(event.data);
-    if (data.type === "song"){
-        updateOverlay(data);
-        updateProgress(data.progress_ms, data.duration_ms);
-        const overlay = document.getElementById("overlay");
-        overlay.style.transform = "translateY(0)";
-        setTimeout(moveUp, 5000);
+    if (data.to == "spotifyOverlay"){
+        var msg = data.data;
+        if (msg.type === "song"){
+            updateOverlay(msg);
+            updateProgress(msg.progress_ms, msg.duration_ms);
+            const overlay = document.getElementById("overlay");
+            overlay.style.transform = "translateY(0)";
+            setTimeout(moveUp, 5000);
+        }
+        else if (msg.type === "progress"){
+            updateProgress(msg.progress_ms, msg.duration_ms);
+        }
+        else if (msg.type === "show"){
+            const overlay = document.getElementById("overlay");
+            overlay.style.transform = "translateY(0)";
+            setTimeout(moveUp, 5000);
+        }
     }
-    else if (data.type === "progress"){
-        updateProgress(data.progress_ms, data.duration_ms);
-    }
-    else if (data.type === "show"){
-        const overlay = document.getElementById("overlay");
-        overlay.style.transform = "translateY(0)";
-        setTimeout(moveUp, 5000);
-    }
+    
 }
 
 socket.onclose = function (event) {
@@ -92,6 +96,6 @@ function updateBackgroudColor(imageUrl){
 
 setInterval(function(){
     if (!connected){
-        socket = new WebSocket("ws://172.28.230.54:5962");
+        socket = new WebSocket("ws://192.168.0.16:5963");
     }
 }, 100000);

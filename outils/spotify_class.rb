@@ -11,14 +11,14 @@ class Spotify
     conn.request :url_encoded
   end
 
-  $myServer2 = Faraday.new(url: "http://192.168.0.16:5557") do |conn|
+  $myServer2 = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
     conn.request :url_encoded
   end
 
   ##############################################################
 
   def getAccess()
-    response = $myServer2.get("/request") do |req|
+    response = $myServer2.get("/token/spotify") do |req|
       req.headers["Authorization"] = $twitch_token_password
     end
     rep = JSON.parse(response.body)

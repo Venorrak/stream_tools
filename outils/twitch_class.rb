@@ -12,7 +12,7 @@ class Twitch
       conn.request :url_encoded
     end
 
-    $myServer = Faraday.new(url: "http://192.168.0.16:6543") do |conn|
+    $myServer = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
       conn.request :url_encoded
     end
 
@@ -31,7 +31,7 @@ class Twitch
 
   #get token from the server
   def getAccess()
-    response = $myServer.get("/") do |req|
+    response = $myServer.get("/token/twitch") do |req|
       req.headers["Authorization"] = $twitch_token_password
     end
     rep = JSON.parse(response.body)
