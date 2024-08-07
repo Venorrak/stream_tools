@@ -61,7 +61,6 @@ def getAccess()
 end
 
 def refreshAccess()
-
   #https://dev.twitch.tv/docs/authentication/refresh-tokens/#how-to-use-a-refresh-token
   response = $server.post("/oauth2/token") do |req|
       req.headers["Content-Type"] = "application/x-www-form-urlencoded"

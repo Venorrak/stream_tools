@@ -709,7 +709,7 @@ Thread.start do
                           "content": "#{data["event"]["user_name"]} has resubscribed :\n #{data["event"]["message"]["text"]}"
                         }
                       ],
-                      "type": "subscibe"
+                      "type": "subscribe"
                   }
                   $twitch.writeToJSON(msg)
 

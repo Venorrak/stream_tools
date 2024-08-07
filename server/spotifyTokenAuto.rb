@@ -43,14 +43,6 @@ get '/callback' do
   ]
 end
 
-post '/token' do
-  body = request.body.read
-  body = JSON.parse(body)
-  $token = body['access_token']
-  $refresh_token = body['refresh_token']
-  p "expires in: #{body['expires_in']}"
-end
-
 get '/request' do
   if request.env['HTTP_AUTHORIZATION'] == $spotify_safety_string
     return [
