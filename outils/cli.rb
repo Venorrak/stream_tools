@@ -523,7 +523,7 @@ def treat_twitch_commands(data)
       when "!dum"
         $godot.dum_on_off()
       when "!discord"
-        $twitch.send_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
+        $twitch.send_message("venorrak", "empty discord server: https://discord.gg/ydJ7NCc8XM")
       when "!commands"
         $twitch.send_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
       when "!c"
@@ -557,8 +557,9 @@ Thread.start do
       end
 
       ws.on :message do |event|
-          data = [:message, event.data]
+          #data = [:message, event.data]
           data = JSON.parse(event.data)
+          #ap data
           if data["metadata"]["message_type"] == "session_welcome"
               subscriptions = [
                   {"type": "channel.follow", "version": "2"},
@@ -584,7 +585,7 @@ Thread.start do
                       "message": [
                         {
                           "type": "text",
-                          "content": "#{data["event"]["user_name"]} has followed"
+                          "content": "#{data["payload"]["event"]["user_name"]} has followed"
                         }
                       ],
                       "type": "notif"
@@ -648,7 +649,7 @@ Thread.start do
                       "message": [
                         {
                           "type": "text",
-                          "content": "ads playing for #{data["event"]["duration_seconds"]} seconds"
+                          "content": "ads playing for #{data["payload"]["event"]["duration_seconds"]} seconds"
                         }
                       ],
                       "type": "negatif"
@@ -663,7 +664,7 @@ Thread.start do
                           "message": [
                             {
                               "type": "text",
-                              "content": "#{data["event"]["user_name"]} has subscribed"
+                              "content": "#{data["payload"]["event"]["user_name"]} has subscribed"
                             }
                           ],
                           "type": "subscribe"
@@ -679,7 +680,7 @@ Thread.start do
                           "message": [
                             {
                               "type": "text",
-                              "content": "anonymous has gifted #{data["event"]["total"]} subs"
+                              "content": "anonymous has gifted #{data["payload"]["event"]["total"]} subs"
                             }
                           ],
                           "type": "subscribe"
@@ -691,7 +692,7 @@ Thread.start do
                           "message": [
                             {
                               "type": "text",
-                              "content": "#{data["event"]["gifter_name"]} has gifted #{data["event"]["total"]} subs"
+                              "content": "#{data["payload"]["event"]["gifter_name"]} has gifted #{data["payload"]["event"]["total"]} subs"
                             }
                           ],
                           "type": "subscribe"
@@ -706,7 +707,7 @@ Thread.start do
                       "message": [
                         {
                           "type": "text",
-                          "content": "#{data["event"]["user_name"]} has resubscribed :\n #{data["event"]["message"]["text"]}"
+                          "content": "#{data["payload"]["event"]["user_name"]} has resubscribed :\n #{data["payload"]["event"]["message"]["text"]}"
                         }
                       ],
                       "type": "subscibe"
@@ -720,7 +721,7 @@ Thread.start do
                           "name_color": "#e100ff",
                           "message": [{
                               "type": "text",
-                              "content": "#{data["event"]["user_name"]} has cheered #{data["event"]["bits"]} bits"
+                              "content": "#{data["payload"]["event"]["user_name"]} has cheered #{data["payload"]["event"]["bits"]} bits"
                           }],
                           "type": "cheer"
                       }
@@ -731,7 +732,7 @@ Thread.start do
                           "message": [
                             {
                               "type": "text",
-                              "content": "anonymous has cheered #{data["event"]["bits"]} bits"
+                              "content": "anonymous has cheered #{data["payload"]["event"]["bits"]} bits"
                             }
                           ],
                           "type": "cheer"
@@ -746,7 +747,7 @@ Thread.start do
                       "message": [
                         {
                           "type": "text",
-                          "content": "#{data["event"]["from_broadcaster_user_name"]} has raided with #{data["event"]["viewers"]} viewers !"
+                          "content": "#{data["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{data["payload"]["event"]["viewers"]} viewers !"
                         }
                       ],
                       "type": "raid"
@@ -767,7 +768,6 @@ Thread.start do
     WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5962) do |ws|
       ws.onopen do
         $clients << ws
-        p 'Client connected'
         playback = $spotify.getPlaybackState()
         data = {
           "type" => "song",
