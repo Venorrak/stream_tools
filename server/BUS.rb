@@ -133,6 +133,11 @@ def refreshTwitchAccess()
   rep = JSON.parse(response.body)
   $twitch_token = rep["access_token"]
   $twitch_refresh_token = rep["refresh_token"]
+  msg = createMSG("BUS", "cli", {
+    "type": "token_refreshed",
+    "client": "twitch"
+  })
+  sendToAllClients(msg)
 end
 
 def refreshSpotifyAccess()
@@ -151,6 +156,11 @@ def refreshSpotifyAccess()
   else
     rep = JSON.parse(response.body)
     $spotify_token = rep['access_token']
+    msg = createMSG("BUS", "cli", {
+      "type": "token_refreshed",
+      "client": "spotify"
+    })
+    sendToAllClients(msg)
   end
 end
 
@@ -234,7 +244,7 @@ def createMSG(from, to, data)
     "from": from,
     "to": to,
     "time": AbsoluteTime.now,
-    "data": data
+    "payload": data
   }
 end
 
@@ -281,8 +291,13 @@ def updateSpotifyOverlay()
 end
 
 def sendToAllClients(msg)
+  
   $WsClients.each do |client|
-    client.send(msg.to_json)
+    if msg.is_a?(Hash)
+      client.send(msg.to_json)
+    else
+      client.send(msg)
+    end
   end
 end
 
@@ -312,8 +327,14 @@ def treat_twitch_commands(data)
       when "!color"
           color = words[1]
           if color.match?(/^#[0-9A-F]{6}$/i)
-              color = color.delete_prefix("#")
-              $godot.change_color2(color)
+            color = color.delete_prefix("#")
+            msg = {
+              'command': 'change_color',
+              'params': {},
+              'data': color
+            }
+            createMSG("twitch", "avatar", msg)
+            sendToAllClients(msg)
           end
       when "!rainbow"
         msg = {
@@ -321,7 +342,7 @@ def treat_twitch_commands(data)
           'params': {},
           'data': {}
         }
-        createMSG("twitch", "all", msg)
+        createMSG("twitch", "avatar", msg)
         sendToAllClients(msg)
       when "!dum"
         msg = {
@@ -329,7 +350,7 @@ def treat_twitch_commands(data)
           'params': {},
           'data': {}
         }
-        createMSG("twitch", "all", msg)
+        createMSG("twitch", "avatar", msg)
         sendToAllClients(msg)
       when "!discord"
         send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
@@ -358,22 +379,16 @@ Thread.start do
       now = AbsoluteTime.now
       if (now - $twitch_last_refresh) > 7200
         refreshTwitchAccess()
+        $twitch_last_refresh = now
       end
       if (now - $spotify_last_refresh) > 2500
         refreshSpotifyAccess()
+        $spotify_last_refresh = now
       end
       updateSpotifyOverlay()
     end
   end
 end
-
-template = {
-  "from": "BUS",# "spotify", "twitch", "cli", "godot", chatOverlay, musicOverlay, JoelBot, etc
-  "to": "waterver",
-  "time": AbsoluteTime.now,
-  "data": {
-  }
-}
 
 Thread.start do
   EM.run {
