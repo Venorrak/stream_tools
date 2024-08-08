@@ -32,6 +32,7 @@ $spotify_token = nil
 $spotify_refresh_token = nil
 $spotify_last_refresh = AbsoluteTime.now
 $spotify_last_song_played = nil
+$spotify_update_counter = 0
 
 $twitch_token = nil
 $twitch_refresh_token = nil
@@ -236,14 +237,19 @@ def getTwitchUserPFP(username)
     req.headers["Client-Id"] = $twitch_bot_id
   end
   rep = JSON.parse(response.body)
-  return rep["data"][0]["profile_image_url"]
+  begin
+    return rep["data"][0]["profile_image_url"]
+  rescue
+    ap rep
+    return "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fdivedigital.id%2Fwp-content%2Fuploads%2F2022%2F07%2F2-Blank-PFP-Icon-Instagram.jpg&f=1&nofb=1&ipt=a0b42ddbcd36b663a8af0c817aeb97394e66d999f6f6613150ed5cf9466123c8&ipo=images"
+  end
 end
 
 def createMSG(from, to, data)
   return {
     "from": from,
     "to": to,
-    "time": AbsoluteTime.now,
+    "time": "#{Time.now().to_s.split(" ")[1]}",
     "payload": data
   }
 end
@@ -261,49 +267,65 @@ def getSpotidyPlaybackState()
   response = $spotify_api_server.get("/v1/me/player") do |req|
     req.headers["Authorization"] = "Bearer #{$spotify_token}"
   end
-  rep = JSON.parse(response.body)
-  return rep
+  if response.status != 204
+    rep = JSON.parse(response.body)
+  end
+  if response.status == 200
+    return rep
+  else
+    return nil
+  end
 end
 
 def updateSpotifyOverlay()
   playback = getSpotidyPlaybackState()
-  if playback["item"]["name"] != $spotify_last_song_played
-    $spotify_last_song_played = playback["item"]["name"]
-    msg = {
-      "type": "song",
-      "name": playback["item"]["name"],
-      "artist": playback["item"]["artists"][0]["name"],
-      "image": playback["item"]["album"]["images"][0]["url"],
-      "progress_ms": playback["progress_ms"],
-      "duration_ms": playback["item"]["duration_ms"]
-    }
-    msg = createMSG("spotify", "spotifyOverlay", msg)
-    sendToAllClients(msg)
-  else
-    msg = {
-      "type": "progress",
-      "progress_ms": playback["progress_ms"],
-      "duration_ms": playback["item"]["duration_ms"]
-    }
-    msg = createMSG("spotify", "spotifyOverlay", msg)
-    sendToAllClients(msg)
-  end
-end
-
-def sendToAllClients(msg)
-  
-  $WsClients.each do |client|
-    if msg.is_a?(Hash)
-      client.send(msg.to_json)
+  if !playback.nil?
+    if playback["item"]["name"] != $spotify_last_song_played
+      $spotify_last_song_played = playback["item"]["name"]
+      msg = {
+        "type": "song",
+        "name": playback["item"]["name"],
+        "artist": playback["item"]["artists"][0]["name"],
+        "image": playback["item"]["album"]["images"][0]["url"],
+        "progress_ms": playback["progress_ms"],
+        "duration_ms": playback["item"]["duration_ms"]
+      }
+      msg = createMSG("spotify", "spotifyOverlay", msg)
+      sendToAllClients(msg)
+      $spotify_update_counter = 6
     else
-      client.send(msg)
+      if $spotify_update_counter > 0
+        $spotify_update_counter -= 1
+        msg = {
+          "type": "progress",
+          "progress_ms": playback["progress_ms"],
+          "duration_ms": playback["item"]["duration_ms"]
+        }
+        msg = createMSG("spotify", "spotifyOverlay", msg)
+        sendToAllClients(msg)
+      end
     end
   end
 end
 
+def sendToAllClients(msg)
+  if msg.is_a?(Hash)
+    msg = msg.to_json
+  end
+  printBus(msg)
+  $WsClients.each do |client|
+    client.send(msg)
+  end
+end
+
+def printBus(msg)
+  msg = JSON.parse(msg)
+  puts "#{msg["time"] || Time.now().to_s.split(" ")[1]} - #{msg["from"]} to #{msg["to"]} : #{msg["payload"]}"
+end
+
 def send_twitch_message(channel, message)
   begin
-    channel_id = getTwitchUser(channel)["data"][0]["id"]
+    channel_id = getTwitchUserId(channel)
     request_body = {
         "broadcaster_id": channel_id,
         "sender_id": $me_twitch_id,
@@ -364,6 +386,7 @@ def treat_twitch_commands(data)
         }
         msg = createMSG("twitch", "spotifyOverlay", msg)
         sendToAllClients(msg)
+        $spotify_update_counter = 6
       end
   end
 end
