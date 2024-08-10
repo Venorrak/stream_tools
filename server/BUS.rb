@@ -127,18 +127,28 @@ end
 
 def refreshTwitchAccess()
   #https://dev.twitch.tv/docs/authentication/refresh-tokens/#how-to-use-a-refresh-token
-  response = $server.post("/oauth2/token") do |req|
+  response = $twitch_auth_server.post("/oauth2/token") do |req|
       req.headers["Content-Type"] = "application/x-www-form-urlencoded"
       req.body = "grant_type=refresh_token&refresh_token=#{$twitch_refresh_token}&client_id=#{$twitch_bot_id}&client_secret=#{$twitch_bot_secret}"
   end
-  rep = JSON.parse(response.body)
-  $twitch_token = rep["access_token"]
-  $twitch_refresh_token = rep["refresh_token"]
-  msg = createMSG("BUS", "cli", {
-    "type": "token_refreshed",
-    "client": "twitch"
-  })
-  sendToAllClients(msg)
+  begin
+    rep = JSON.parse(response.body)
+  rescue
+    p response.body
+    return
+  end
+  if !rep["access_token"].nil? && !rep["refresh_token"].nil?
+    $twitch_token = rep["access_token"]
+    $twitch_refresh_token = rep["refresh_token"]
+    msg = createMSG("BUS", "cli", {
+      "type": "token_refreshed",
+      "client": "twitch"
+    })
+    sendToAllClients(msg)
+  else
+    p "error refreshing twitch token"
+    p rep
+  end
 end
 
 def refreshSpotifyAccess()
@@ -147,21 +157,31 @@ def refreshSpotifyAccess()
     "refresh_token": $spotify_refresh_token
   }
   body_encoded = URI.encode_www_form(body)
-  response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
-    req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-    req.headers["Authorization"] = "Basic " + Base64.strict_encode64("#{$spotify_client_id}:#{$spotify_client_secret}")
+  begin
+    response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
+      req.headers["Content-Type"] = "application/x-www-form-urlencoded"
+      req.headers["Authorization"] = "Basic " + Base64.strict_encode64("#{$spotify_client_id}:#{$spotify_client_secret}")
+    end
+  rescue
+    p "error accessing spotify server"
+    return
   end
   if response.status != 200
     p response.status
     p response.body
   else
     rep = JSON.parse(response.body)
-    $spotify_token = rep['access_token']
-    msg = createMSG("BUS", "cli", {
-      "type": "token_refreshed",
-      "client": "spotify"
-    })
-    sendToAllClients(msg)
+    if !rep['access_token'].nil?
+      $spotify_token = rep['access_token']
+      msg = createMSG("BUS", "cli", {
+        "type": "token_refreshed",
+        "client": "spotify"
+      })
+      sendToAllClients(msg)
+    else
+      p "error refreshing spotify token"
+      p rep
+    end
   end
 end
 
@@ -223,20 +243,28 @@ def subscribeToTwitchEventSub(session_id, type)
 end
 
 def getTwitchUserId(username)
-  response = $APItwitch.get("/helix/users?login=#{username}") do |req|
-    req.headers["Authorization"] = "Bearer #{$twitch_token}"
-    req.headers["Client-Id"] = $twitch_bot_id
+  begin
+    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+    end
+    rep = JSON.parse(response.body)
+  rescue
+    return nil
   end
-  rep = JSON.parse(response.body)
   return rep["data"][0]["id"]
 end
 
 def getTwitchUserPFP(username)
-  response = $APItwitch.get("/helix/users?login=#{username}") do |req|
-    req.headers["Authorization"] = "Bearer #{$twitch_token}"
-    req.headers["Client-Id"] = $twitch_bot_id
+  begin
+    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+    end
+    rep = JSON.parse(response.body)
+  rescue
+    return ""
   end
-  rep = JSON.parse(response.body)
   begin
     return rep["data"][0]["profile_image_url"]
   rescue
@@ -264,16 +292,25 @@ def createMSGTwitch(name, name_color, message, type)
 end
 
 def getSpotidyPlaybackState()
-  response = $spotify_api_server.get("/v1/me/player") do |req|
-    req.headers["Authorization"] = "Bearer #{$spotify_token}"
+  begin
+    response = $spotify_api_server.get("/v1/me/player") do |req|
+      req.headers["Authorization"] = "Bearer #{$spotify_token}"
+    end
+  rescue
+    return nil
   end
   if response.status != 204
-    rep = JSON.parse(response.body)
-  end
-  if response.status == 200
-    return rep
-  else
-    return nil
+    begin
+      rep = JSON.parse(response.body)
+    rescue
+      p "json parse error"
+      return nil
+    end
+    if response.status == 200
+      return rep
+    else
+      return nil
+    end
   end
 end
 
@@ -292,7 +329,7 @@ def updateSpotifyOverlay()
       }
       msg = createMSG("spotify", "spotifyOverlay", msg)
       sendToAllClients(msg)
-      $spotify_update_counter = 6
+      $spotify_update_counter = 11
     else
       if $spotify_update_counter > 0
         $spotify_update_counter -= 1
@@ -326,6 +363,9 @@ end
 def send_twitch_message(channel, message)
   begin
     channel_id = getTwitchUserId(channel)
+    if channel == "venorrak"
+      message = "[📺] #{message}"
+    end
     request_body = {
         "broadcaster_id": channel_id,
         "sender_id": $me_twitch_id,
@@ -336,6 +376,7 @@ def send_twitch_message(channel, message)
         req.headers["Client-Id"] = $twitch_bot_id
         req.headers["Content-Type"] = "application/json"
     end
+    p response.status
   rescue
     p "error sending message"
   end
@@ -381,18 +422,23 @@ def treat_twitch_commands(data)
       when "!c"
         send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
       when "!song"
+        #TODO : send song info and playlist in chat
         msg = {
           "type": "show"
         }
         msg = createMSG("twitch", "spotifyOverlay", msg)
         sendToAllClients(msg)
-        $spotify_update_counter = 6
+        $spotify_update_counter = 11
       end
   end
 end
 
 getTwitchAccess()
 $me_twitch_id = getTwitchUserId("venorrak")
+if $me_twitch_id.nil?
+  p "WARNING error getting twitch id for venorrak"
+  exit
+end
 authorize_spotify()
 
 Thread.start do
