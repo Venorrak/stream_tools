@@ -14,7 +14,7 @@ socket.onmessage = function (event) {
             updateProgress(msg.progress_ms, msg.duration_ms);
             const overlay = document.getElementById("overlay");
             overlay.style.transform = "translateY(0)";
-            setTimeout(moveUp, 5000);
+            setTimeout(moveUp, 10000);
         }
         else if (msg.type === "progress"){
             updateProgress(msg.progress_ms, msg.duration_ms);
@@ -22,7 +22,7 @@ socket.onmessage = function (event) {
         else if (msg.type === "show"){
             const overlay = document.getElementById("overlay");
             overlay.style.transform = "translateY(0)";
-            setTimeout(moveUp, 5000);
+            setTimeout(moveUp, 10000);
         }
     }
     

@@ -23,6 +23,7 @@ html, body {
     border: 2px solid rgb(0, 0, 0);
     border-top: 0px;
     overflow: hidden;
+    word-break: break-all;
     transition: 0.5s cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
@@ -58,6 +59,7 @@ p {
 #title {
     display: flex;
     align-items: center;
+    overflow:hidden;
     height: 100%;
 }
 
@@ -71,6 +73,7 @@ p {
     height: 50%;
     width: 100%;
     overflow: hidden;
+
 }
 
 #bottom {
