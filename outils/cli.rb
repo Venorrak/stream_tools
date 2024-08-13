@@ -27,6 +27,8 @@ $myServer = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
   conn.request :url_encoded
 end
 
+$bus = nil
+
 $twitch = Twitch.new(@twitch_bot_id, $twitch_token_password, $myServer)
 $obs = OBS.new(@obs_password)
 $godot = Godot.new()
@@ -404,6 +406,7 @@ def godot_menu()
     'dum_on_off',
     'brb_on_off',
     'starting_on_off',
+    'zoom_on_off',
     'back'
   ]
   choices.each_with_index do |choice, index|
@@ -447,6 +450,9 @@ def godot_menu()
     $godot.starting_on_off()
     godot_menu()
   when 12
+    $godot.zoom_on_off()
+    godot_menu()
+  when 13
     main_menu()
   else
     puts('Invalid choice')
@@ -461,6 +467,7 @@ def main_menu()
       "twitch",
       "obs",
       "spotify",
+      "test_ws",
       "exit"
   ]
   system('clear')
@@ -479,6 +486,11 @@ def main_menu()
   when 4
     spotify_menu()
   when 5
+    p "sending test message"
+    $bus.send({to: "BUS", from: "cli", payload: {type: "test"}}.to_json)
+    sleep(1)
+    main_menu()
+  when 6
     exit
   else
     puts('Invalid choice')
@@ -569,16 +581,22 @@ end
 
 Thread.start do
   EM.run do
-    ws = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
+    bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
 
-    ws.on :open do |event|
+    bus.on :open do |event|
       p [:open, "BUS"]
+      $bus = bus
     end
 
-    ws.on :message do |event|
-      data = JSON.parse(event.data)
+    bus.on :message do |event|
+      begin
+        data = JSON.parse(event.data)
+      rescue
+        data = event.data
+      end
       if data["to"] == "cli" && data["from"] == "BUS"
         if data["payload"]["type"] == "token_refreshed"
+          p "token refreshing"
           case data["payload"]["client"]
           when "twitch"
             $twitch.getAccess()
@@ -589,7 +607,11 @@ Thread.start do
       end
     end
 
-    ws.on :close do |event|
+    bus.on :error do |event|
+      p [:error, event.message, "BUS"]
+    end
+
+    bus.on :close do |event|
       p [:close, event.code, event.reason, "BUS"]
     end
   end

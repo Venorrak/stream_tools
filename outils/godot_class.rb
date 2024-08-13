@@ -40,6 +40,17 @@ class Godot
   #       Godot functions      #
   ##############################
 
+  def zoom_on_off()
+    if !@godot_server.nil?
+      msg = {
+        'command': 'zoom_in_out',
+        'params': {},
+        'data': {}
+      }
+      send_to_godot(msg)
+    end
+  end
+
   def starting_on_off()
     if !@godot_server.nil?
       msg = {
