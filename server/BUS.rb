@@ -303,7 +303,6 @@ def getSpotidyPlaybackState()
     begin
       rep = JSON.parse(response.body)
     rescue
-      p "json parse error"
       return nil
     end
     if response.status == 200
@@ -319,11 +318,26 @@ def updateSpotifyOverlay()
   if !playback.nil?
     if playback["item"]["name"] != $spotify_last_song_played
       $spotify_last_song_played = playback["item"]["name"]
+      begin
+        music_name = playback["item"]["name"]
+      rescue
+        music_name = "No name"
+      end
+      begin
+        music_artist = playback["item"]["artists"][0]["name"]
+      rescue
+        music_artist = "No artist"
+      end
+      begin
+        music_image = playback["item"]["album"]["images"][0]["url"]
+      rescue
+        music_image = ""
+      end
       msg = {
         "type": "song",
-        "name": playback["item"]["name"],
-        "artist": playback["item"]["artists"][0]["name"],
-        "image": playback["item"]["album"]["images"][0]["url"],
+        "name": music_name,
+        "artist": music_artist,
+        "image": music_image,
         "progress_ms": playback["progress_ms"],
         "duration_ms": playback["item"]["duration_ms"]
       }
@@ -356,7 +370,12 @@ def sendToAllClients(msg)
 end
 
 def printBus(msg)
-  msg = JSON.parse(msg)
+  begin
+    msg = JSON.parse(msg)
+  rescue
+    p msg
+    return
+  end
   puts "#{msg["time"] || Time.now().to_s.split(" ")[1]} - #{msg["from"]} to #{msg["to"]} : #{msg["payload"]}"
 end
 
@@ -429,6 +448,8 @@ def treat_twitch_commands(data)
         msg = createMSG("twitch", "spotifyOverlay", msg)
         sendToAllClients(msg)
         $spotify_update_counter = 11
+      when "Joelest"
+        send_twitch_message("venorrak", "I'm the Joelest")
       end
   end
 end
@@ -468,7 +489,11 @@ Thread.start do
     end
 
     ws.on :message do |event|
-      receivedData = JSON.parse(event.data)
+      begin
+        receivedData = JSON.parse(event.data)
+      rescue
+        return
+      end
       if receivedData["metadata"]["message_type"] == "session_welcome"
         subscriptions = [
           {"type": "channel.follow", "version": "2"},
@@ -595,7 +620,7 @@ Thread.start do
     end
 
     ws.on :close do |event|
-      #p [:close, event.code, event.reason, "twitch"]
+      p [:close, event.code, event.reason, "twitch"]
     end
   }
 end
@@ -612,6 +637,7 @@ Thread.start do
       end
 
       ws.onclose do
+        p "closing ws"
         $WsClients.delete(ws)
         ws.close
       end
