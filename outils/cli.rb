@@ -10,6 +10,7 @@ require "base64"
 require "digest"
 require "securerandom"
 require 'timeout'
+require 'securerandom'
 
 gemfile do
   source "https://rubygems.org"
@@ -461,13 +462,170 @@ def godot_menu()
   end
 end
 
+def test_menu()
+  choices = [
+    "send normal message",
+    "send follow",
+    "send sub",
+    "send raid",
+    "send bits",
+    "send new music",
+    "send music state",
+    "send music show",
+    "back"
+  ]
+  system('clear')
+  choices.each_with_index do |choice, index|
+    puts("#{index + 1}. #{choice}")
+  end
+  print('Enter your choice: ')
+  choice = gets.chomp.to_i
+  case choice
+  when 1
+    msg = {
+      "from" => "BUS",
+      "to" => "chat",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" =>
+      {
+        "name" => "test",
+        "message": [
+          {"type" => "text", "content" => "This is a test message"}
+        ],
+        "type" => "default",
+        "name_color" => "#FFFFFF",
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+      } 
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 2
+    msg = {
+      "from" => "BUS",
+      "to" => "chat",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" =>
+      {
+        "name" => "FOLLOW",
+        "message": [
+          {"type" => "text", "content" => "This is a test follow"}
+        ],
+        "type" => "notif",
+        "name_color" => "#FFFFFF",
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+      } 
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 3
+    msg = {
+      "from" => "BUS",
+      "to" => "chat",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" =>
+      {
+        "name" => "Subscibe",
+        "message": [
+          {"type" => "text", "content" => "This is a test sub"}
+        ],
+        "type" => "subscribe",
+        "name_color" => "#FFFFFF",
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+      } 
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 4
+    msg = {
+      "from" => "BUS",
+      "to" => "chat",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" =>
+      {
+        "name" => "RAID",
+        "message": [
+          {"type" => "text", "content" => "This is a test sub"}
+        ],
+        "type" => "raid",
+        "name_color" => "#FFFFFF",
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+      } 
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 5
+    msg = {
+      "from" => "BUS",
+      "to" => "chat",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" =>
+      {
+        "name" => "BITS",
+        "message": [
+          {"type" => "text", "content" => "This is a test bits"}
+        ],
+        "type" => "cheer",
+        "name_color" => "#FFFFFF",
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+      } 
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 6
+    msg = {
+      "from" => "spotify",
+      "to" => "spotifyOverlay",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" => {
+        "type": "song",
+        "name": SecureRandom.alphanumeric(6),
+        "artist": "dumbass",
+        "image": "https://server.venorrak.dev/pictures/LOGO.png",
+        "progress_ms": 50,
+        "duration_ms": 100
+      }
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 7
+    msg = {
+      "from" => "spotify",
+      "to" => "spotifyOverlay",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" => {
+        "progress_ms": 50,
+        "duration_ms": 100
+      }
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 8 
+    msg = {
+      "from" => "spotify",
+      "to" => "spotifyOverlay",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" => {
+        "type" => "show"
+      }
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 9
+    main_menu()
+  else
+    puts('Invalid choice')
+    sleep(1)
+    test_menu()
+  end
+end
+
 def main_menu()
   choices = [
       "godot",
       "twitch",
       "obs",
       "spotify",
-      "test_ws",
+      "test functions",
       "exit"
   ]
   system('clear')
@@ -486,10 +644,8 @@ def main_menu()
   when 4
     spotify_menu()
   when 5
-    p "sending test message"
-    $bus.send({to: "BUS", from: "cli", payload: {type: "test"}}.to_json)
-    sleep(1)
-    main_menu()
+    #$bus.send({to: "BUS", from: "cli", payload: {type: "test"}}.to_json)
+    test_menu()
   when 6
     exit
   else
@@ -596,7 +752,6 @@ Thread.start do
       end
       if data["to"] == "cli" && data["from"] == "BUS"
         if data["payload"]["type"] == "token_refreshed"
-          p "token refreshing"
           case data["payload"]["client"]
           when "twitch"
             $twitch.getAccess()

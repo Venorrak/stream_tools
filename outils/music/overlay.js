@@ -1,5 +1,6 @@
 socket = new WebSocket("ws://192.168.0.16:5963");
 var connected = false;
+var showing = true;
 
 socket.onopen = function (event) {
     connected = true;
@@ -13,16 +14,23 @@ socket.onmessage = function (event) {
             updateOverlay(msg);
             updateProgress(msg.progress_ms, msg.duration_ms);
             const overlay = document.getElementById("overlay");
-            overlay.style.transform = "translateY(0)";
-            setTimeout(moveUp, 10000);
+            if (showing === false){
+                overlay.style.transform = "translateY(0)";
+                showing = true
+                setTimeout(moveUp, 10000);
+            }
+            
         }
         else if (msg.type === "progress"){
             updateProgress(msg.progress_ms, msg.duration_ms);
         }
         else if (msg.type === "show"){
             const overlay = document.getElementById("overlay");
-            overlay.style.transform = "translateY(0)";
-            setTimeout(moveUp, 10000);
+            if (showing === false){
+                overlay.style.transform = "translateY(0)";
+                showing = true
+                setTimeout(moveUp, 10000);
+            }
         }
     }
     
@@ -36,6 +44,7 @@ socket.onclose = function (event) {
 function moveUp(){
     const overlay = document.getElementById("overlay");
     overlay.style.transform = "translateY(-100%)";
+    showing = false;
 }
 
 function updateOverlay(data){

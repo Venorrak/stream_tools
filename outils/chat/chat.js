@@ -32,6 +32,12 @@ function sound_ad(){
     audio.play();
 }
 
+function sound_message(){
+    var audio = new Audio('sounds/message2.mp3');
+    audio.volume = 0.1;
+    audio.play();
+}
+
 function purifyString(string) {
     return string.replace(/<[^>]+>/g, '');
 }
@@ -42,10 +48,12 @@ socket.onopen = function(event){
 
 socket.onmessage = function(event){
     var data = JSON.parse(event.data);
+    console.log(data);
     if (data.to == "chat"){
         var chat = document.getElementById('chat');
         var message = document.createElement('div');
         message.className = 'message';
+        sound_message();
         switch (data.payload.type){
             case 'notif':
                 message.classList.add('notif')
