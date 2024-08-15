@@ -16,10 +16,12 @@ gemfile do
   gem 'sinatra-contrib'
   gem 'rackup'
   gem 'webrick'
+  gem "mysql2"
   require 'sinatra'
 end
 
 require "faraday"
+require "mysql2"
 require_relative "secret.rb"
 
 set :port, 9898
@@ -39,6 +41,9 @@ $twitch_refresh_token = nil
 $twitch_last_refresh = AbsoluteTime.now
 $me_twitch_id = nil
 
+$points_last_refresh = AbsoluteTime.now
+$points_users_last_scan = []
+
 $spotify_auth_server = Faraday.new(url: "https://accounts.spotify.com") do |conn|
   conn.request :url_encoded
 end
@@ -54,6 +59,20 @@ end
 $spotify_api_server = Faraday.new(url: "https://api.spotify.com") do |conn|
   conn.request :url_encoded
 end
+
+$myWebPage = Faraday.new(url: "https://server.venorrak.dev") do |conn|
+  conn.request :url_encoded
+end
+
+$sql = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234")
+$sql.query("USE stream;")
+
+$sqlNewUser = $sql.prepare("INSERT INTO users (name, twitch_id) VALUES (?, ?);")
+$sqlNewPoints = $sql.prepare("INSERT INTO points (user_id, points) VALUES (?, 0);")
+$sqlGetUser = $sql.prepare("SELECT id, name FROM users WHERE twitch_id = ?;")
+$sqlAddPoints = $sql.prepare("UPDATE points SET points = points + ? WHERE user_id = ?;")
+$sqlRemovePoints = $sql.prepare("UPDATE points SET points = points - ? WHERE user_id = ?;")
+$sqlGetPoints = $sql.prepare("SELECT points FROM points WHERE user_id = ?;")
 
 get '/token/spotify' do
   if request.env['HTTP_AUTHORIZATION'] == $spotify_safety_string
@@ -100,6 +119,8 @@ get '/callback' do
     ["<p>Spotify token received</p>"]
   ]
 end
+
+##### TWITCH #####
 
 def getTwitchAccess()
   oauthToken = nil
@@ -150,6 +171,184 @@ def refreshTwitchAccess()
     p rep
   end
 end
+
+def subscribeToTwitchEventSub(session_id, type)
+  data = {
+      "type" => type[:type],
+      "version" => type[:version],
+      "condition" => {
+          "broadcaster_user_id" => $me_twitch_id,
+          "to_broadcaster_user_id" => $me_twitch_id,
+          "user_id" => $me_twitch_id,
+          "moderator_user_id" => $me_twitch_id
+      },
+      "transport" => {
+          "method" => "websocket",
+          "session_id" => session_id
+      }
+  }.to_json
+  response = $APItwitch.post("/helix/eventsub/subscriptions", data) do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+      req.headers["Content-Type"] = "application/json"
+  end
+  return JSON.parse(response.body)
+end
+
+def getTwitchUserId(username)
+  begin
+    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+    end
+    rep = JSON.parse(response.body)
+  rescue
+    return nil
+  end
+  return rep["data"][0]["id"]
+end
+
+def getTwitchUserPFP(username)
+  begin
+    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+    end
+    rep = JSON.parse(response.body)
+  rescue
+    return ""
+  end
+  begin
+    return rep["data"][0]["profile_image_url"]
+  rescue
+    ap rep
+    return "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fdivedigital.id%2Fwp-content%2Fuploads%2F2022%2F07%2F2-Blank-PFP-Icon-Instagram.jpg&f=1&nofb=1&ipt=a0b42ddbcd36b663a8af0c817aeb97394e66d999f6f6613150ed5cf9466123c8&ipo=images"
+  end
+end
+
+def send_twitch_message(channel, message)
+  begin
+    channel_id = getTwitchUserId(channel)
+    if channel == "venorrak"
+      message = "[📺] #{message}"
+    end
+    request_body = {
+        "broadcaster_id": channel_id,
+        "sender_id": $me_twitch_id,
+        "message": message
+    }.to_json
+    response = $APItwitch.post("/helix/chat/messages", request_body) do |req|
+        req.headers["Authorization"] = "Bearer #{$twitch_token}"
+        req.headers["Client-Id"] = $twitch_bot_id
+        req.headers["Content-Type"] = "application/json"
+    end
+    p response.status
+  rescue
+    p "error sending message"
+  end
+end
+
+def treat_twitch_commands(data)
+  first_frag = data["payload"]["event"]["message"]["fragments"][0]
+    if first_frag["type"] == "text"
+      words = first_frag["text"].split(" ")
+      case words[0]
+      when "!color"
+          color = words[1]
+          if color.match?(/^#[0-9A-F]{6}$/i)
+            color = color.delete_prefix("#")
+            msg = {
+              'command': 'change_color',
+              'params': {},
+              'data': color
+            }
+            msg = createMSG("twitch", "avatar", msg)
+            sendToAllClients(msg)
+          end
+      when "!rainbow"
+        msg = {
+          'command': 'starting_on_off',
+          'params': {},
+          'data': {}
+        }
+        msg = createMSG("twitch", "avatar", msg)
+        sendToAllClients(msg)
+      when "!dum"
+        msg = {
+          'command': 'dum_on_off',
+          'params': {},
+          'data': {}
+        }
+        msg = createMSG("twitch", "avatar", msg)
+        sendToAllClients(msg)
+      when "!discord"
+        #send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
+        send_twitch_message("venorrak", "You can see me talking on prod's discord server: https://discord.gg/JzPgeMp3EV or on Jake's discord server: https://discord.gg/MRjMmxQ6Wb")
+      when "!commands"
+        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
+      when "!c"
+        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
+      when "!song"
+        playback = getSpotidyPlaybackState()
+        music_link = playback["item"]["external_urls"]["spotify"]
+        playlist_link = playback["context"]["external_urls"]["spotify"]
+        send_twitch_message("venorrak", "Currently playing: #{music_link}. Listen to the playlist here: #{playlist_link}")
+
+        msg = {
+          "type": "show"
+        }
+        msg = createMSG("twitch", "spotifyOverlay", msg)
+        sendToAllClients(msg)
+        $spotify_update_counter = 11
+      when "!JoelCount"
+        if words[1] != "" && words[1] != nil
+          #if there is a name 
+          username = words[1]
+          rep = $myWebPage.get("/api/joels/users/#{username.downcase}")
+          rep = JSON.parse(rep.body)
+          if rep["error"] != nil
+            send_twitch_message("venorrak", "User not found")
+          else
+            send_twitch_message("venorrak", "#{username} has #{rep["count"].to_i} Joels")
+          end
+        else
+          #if there is no name
+          rep = $myWebPage.get("/api/joels/users/#{data["payload"]["event"]["chatter_user_login"]}")
+          rep = JSON.parse(rep.body)
+          if rep["error"] != nil
+            send_twitch_message("venorrak", "You have no Joels")
+          else
+            send_twitch_message("venorrak", "#{data["payload"]["event"]["chatter_user_name"]} has #{rep["count"].to_i} Joels")
+          end
+        end
+      when "!JoelTop"
+        rep = $myWebPage.get("/api/joels/users?way=DESC&sort=count")
+        rep = JSON.parse(rep.body)
+        begin
+          if rep["error"] != nil
+            send_twitch_message("venorrak", "Bad request")
+          end
+        rescue
+          message = ""
+          rep.each_with_index do |user, index|
+            message += "#{index + 1} - #{user["name"]} (#{user["count"].to_i})"
+            if index > 3
+              break
+            else
+              message += ", "
+            end
+          end
+          send_twitch_message("venorrak", message)
+        end
+        
+
+      when "Joelest"
+        send_twitch_message("venorrak", "I'm the Joelest")
+      end
+  end
+end
+
+##### SPOTIFY #####
 
 def refreshSpotifyAccess()
   body = {
@@ -217,78 +416,6 @@ def get_spotify_token(code)
     $online = true
     p "expires in: #{rep['expires_in']}"
   end
-end
-
-def subscribeToTwitchEventSub(session_id, type)
-  data = {
-      "type" => type[:type],
-      "version" => type[:version],
-      "condition" => {
-          "broadcaster_user_id" => $me_twitch_id,
-          "to_broadcaster_user_id" => $me_twitch_id,
-          "user_id" => $me_twitch_id,
-          "moderator_user_id" => $me_twitch_id
-      },
-      "transport" => {
-          "method" => "websocket",
-          "session_id" => session_id
-      }
-  }.to_json
-  response = $APItwitch.post("/helix/eventsub/subscriptions", data) do |req|
-      req.headers["Authorization"] = "Bearer #{$twitch_token}"
-      req.headers["Client-Id"] = $twitch_bot_id
-      req.headers["Content-Type"] = "application/json"
-  end
-  return JSON.parse(response.body)
-end
-
-def getTwitchUserId(username)
-  begin
-    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
-      req.headers["Authorization"] = "Bearer #{$twitch_token}"
-      req.headers["Client-Id"] = $twitch_bot_id
-    end
-    rep = JSON.parse(response.body)
-  rescue
-    return nil
-  end
-  return rep["data"][0]["id"]
-end
-
-def getTwitchUserPFP(username)
-  begin
-    response = $APItwitch.get("/helix/users?login=#{username}") do |req|
-      req.headers["Authorization"] = "Bearer #{$twitch_token}"
-      req.headers["Client-Id"] = $twitch_bot_id
-    end
-    rep = JSON.parse(response.body)
-  rescue
-    return ""
-  end
-  begin
-    return rep["data"][0]["profile_image_url"]
-  rescue
-    ap rep
-    return "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fdivedigital.id%2Fwp-content%2Fuploads%2F2022%2F07%2F2-Blank-PFP-Icon-Instagram.jpg&f=1&nofb=1&ipt=a0b42ddbcd36b663a8af0c817aeb97394e66d999f6f6613150ed5cf9466123c8&ipo=images"
-  end
-end
-
-def createMSG(from, to, data)
-  return {
-    "from": from,
-    "to": to,
-    "time": "#{Time.now().to_s.split(" ")[1]}",
-    "payload": data
-  }
-end
-
-def createMSGTwitch(name, name_color, message, type)
-  return {
-    "name": name,
-    "name_color": name_color,
-    "message": message,
-    "type": type
-  }
 end
 
 def getSpotidyPlaybackState()
@@ -359,6 +486,26 @@ def updateSpotifyOverlay()
   end
 end
 
+##### UTILS #####
+
+def createMSG(from, to, data)
+  return {
+    "from": from,
+    "to": to,
+    "time": "#{Time.now().to_s.split(" ")[1]}",
+    "payload": data
+  }
+end
+
+def createMSGTwitch(name, name_color, message, type)
+  return {
+    "name": name,
+    "name_color": name_color,
+    "message": message,
+    "type": type
+  }
+end
+
 def sendToAllClients(msg)
   if msg.is_a?(Hash)
     msg = msg.to_json
@@ -379,80 +526,49 @@ def printBus(msg)
   puts "#{msg["time"] || Time.now().to_s.split(" ")[1]} - #{msg["from"]} to #{msg["to"]} : #{msg["payload"]}"
 end
 
-def send_twitch_message(channel, message)
-  begin
-    channel_id = getTwitchUserId(channel)
-    if channel == "venorrak"
-      message = "[📺] #{message}"
-    end
-    request_body = {
-        "broadcaster_id": channel_id,
-        "sender_id": $me_twitch_id,
-        "message": message
-    }.to_json
-    response = $APItwitch.post("/helix/chat/messages", request_body) do |req|
-        req.headers["Authorization"] = "Bearer #{$twitch_token}"
-        req.headers["Client-Id"] = $twitch_bot_id
-        req.headers["Content-Type"] = "application/json"
-    end
-    p response.status
-  rescue
-    p "error sending message"
+##### POINTS #####
+
+def updatePoints()
+  response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{$me_twitch_id}&moderator_id=#{$me_twitch_id}") do |req|
+    req.headers["Authorization"] = "Bearer #{$twitch_token}"
+    req.headers["Client-Id"] = $twitch_bot_id
   end
+  begin
+    rep = JSON.parse(response.body)
+  rescue
+    p "error getting chatters"
+    return
+  end
+  chatters = rep["data"]
+  chatters.each do |chatter|
+    user_twitch_id = chatter["user_id"]
+    user = $sqlGetUser.execute(user_twitch_id)
+    if user == []
+      $sqlNewUser.execute(chatter["user_login"], user_twitch_id)
+      $sqlNewPoints.execute(user_twitch_id)
+    end
+    if $points_users_last_scan.include?(chatter)
+      $sqlAddPoints.execute(10, user_twitch_id)
+    else
+      $points_users_last_scan.push(chatter)
+    end
+    
+  end
+  $points_users_last_scan.each do |chatter|
+    present = false
+    chatters.each do |chatter2|
+      if chatter["user_id"] == chatter2["user_id"]
+        present = true
+      end
+    end
+    if !present
+      $points_users_last_scan.delete(chatter)
+    end
+  end
+
 end
 
-def treat_twitch_commands(data)
-  first_frag = data["payload"]["event"]["message"]["fragments"][0]
-    if first_frag["type"] == "text"
-      words = first_frag["text"].split(" ")
-      case words[0]
-      when "!color"
-          color = words[1]
-          if color.match?(/^#[0-9A-F]{6}$/i)
-            color = color.delete_prefix("#")
-            msg = {
-              'command': 'change_color',
-              'params': {},
-              'data': color
-            }
-            createMSG("twitch", "avatar", msg)
-            sendToAllClients(msg)
-          end
-      when "!rainbow"
-        msg = {
-          'command': 'starting_on_off',
-          'params': {},
-          'data': {}
-        }
-        createMSG("twitch", "avatar", msg)
-        sendToAllClients(msg)
-      when "!dum"
-        msg = {
-          'command': 'dum_on_off',
-          'params': {},
-          'data': {}
-        }
-        createMSG("twitch", "avatar", msg)
-        sendToAllClients(msg)
-      when "!discord"
-        send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
-      when "!commands"
-        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
-      when "!c"
-        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
-      when "!song"
-        #TODO : send song info and playlist in chat
-        msg = {
-          "type": "show"
-        }
-        msg = createMSG("twitch", "spotifyOverlay", msg)
-        sendToAllClients(msg)
-        $spotify_update_counter = 11
-      when "Joelest"
-        send_twitch_message("venorrak", "I'm the Joelest")
-      end
-  end
-end
+##### MAIN #####
 
 getTwitchAccess()
 $me_twitch_id = getTwitchUserId("venorrak")
@@ -475,6 +591,10 @@ Thread.start do
         refreshSpotifyAccess()
         $spotify_last_refresh = now
       end
+      if (now - $points_last_refresh) > 300
+        updatePoints()
+        $points_last_refresh = now
+      end
       updateSpotifyOverlay()
     end
   end
@@ -492,6 +612,7 @@ Thread.start do
       begin
         receivedData = JSON.parse(event.data)
       rescue
+        p "non-json sent by twitch"
         return
       end
       if receivedData["metadata"]["message_type"] == "session_welcome"
@@ -551,7 +672,7 @@ Thread.start do
           message = [
             {
               "type": "text",
-              "content": "ads playing for #{data["payload"]["event"]["duration_seconds"]} seconds"
+              "content": "ads playing for #{receivedData["payload"]["event"]["duration_seconds"]} seconds"
             }
           ]
           data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif")
@@ -578,7 +699,7 @@ Thread.start do
           else
             message = [{
               "type": "text",
-              "content": "anonymous has gifted #{data["payload"]["event"]["total"]} subs"
+              "content": "anonymous has gifted #{receivedData["payload"]["event"]["total"]} subs"
             }]
           end
           data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe")
@@ -587,7 +708,7 @@ Thread.start do
         when "channel.subscription.message"
           message = [{
             "type": "text",
-            "content": "#{data["payload"]["event"]["user_name"]} has resubscribed :\n #{data["payload"]["event"]["message"]["text"]}"
+            "content": "#{receivedData["payload"]["event"]["user_name"]} has resubscribed :\n #{receivedData["payload"]["event"]["message"]["text"]}"
           }]
           data = createMSGTwitch("Resub", "#00ff00", message, "subscribe")
           msg = createMSG("twitch", "chat", data)
@@ -596,12 +717,12 @@ Thread.start do
           if receivedData["payload"]["event"]["is_anonymous"] == false
             message = [{
               "type": "text",
-              "content": "#{data["payload"]["event"]["user_name"]} has cheered #{data["payload"]["event"]["bits"]} bits"
+              "content": "#{receivedData["payload"]["event"]["user_name"]} has cheered #{receivedData["payload"]["event"]["bits"]} bits"
             }]
           else
             message = [{
               "type": "text",
-              "content": "anonymous has cheered #{data["payload"]["event"]["bits"]} bits"
+              "content": "anonymous has cheered #{receivedData["payload"]["event"]["bits"]} bits"
             }]
           end
           data = createMSGTwitch("Cheers", "#e100ff", message, "cheer")
@@ -610,7 +731,7 @@ Thread.start do
         when "channel.raid"
           message = [{
             "type": "text",
-            "content": "#{data["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{data["payload"]["event"]["viewers"]} viewers !"
+            "content": "#{receivedData["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{receivedData["payload"]["event"]["viewers"]} viewers !"
           }]
           data = createMSGTwitch("Raid", "#00ccff", message, "raid")
           msg = createMSG("twitch", "chat", data)
@@ -637,7 +758,6 @@ Thread.start do
       end
 
       ws.onclose do
-        p "closing ws"
         $WsClients.delete(ws)
         ws.close
       end
