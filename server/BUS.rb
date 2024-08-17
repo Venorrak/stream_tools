@@ -443,13 +443,13 @@ end
 def updateSpotifyOverlay()
   playback = getSpotidyPlaybackState()
   if !playback.nil?
-    if playback["item"]["name"] != $spotify_last_song_played
-      $spotify_last_song_played = playback["item"]["name"]
-      begin
-        music_name = playback["item"]["name"]
-      rescue
-        music_name = "No name"
-      end
+    begin
+      music_name = playback["item"]["name"]
+    rescue
+      return
+    end
+    if music_name != $spotify_last_song_played
+      $spotify_last_song_played = music_name
       begin
         music_artist = playback["item"]["artists"][0]["name"]
       rescue
