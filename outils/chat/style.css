@@ -76,6 +76,12 @@
     margin-left: 2px;
 }
 
+.data .emoji-tv {
+    transform: scale(1);
+    transform-origin: bottom left;
+    max-width: 23.8px;
+}
+
 .name {
     font-family: 'bebas_neue';
     padding-left: 10px;
