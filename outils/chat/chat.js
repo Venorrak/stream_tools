@@ -1,12 +1,50 @@
 socket = new WebSocket("ws://192.168.0.16:5963");
 
 var data;
+var emotes;
+
+function fetchJSONData() {
+    var jsonPath = 'emotes.json';
+    return fetch(jsonPath)
+    .then((res) => {
+        if (!res.ok) {
+            throw new Error
+                (`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+    })
+}
 
 function build_message(data){
     var text = "";
     for (var i = 0; i < data.length; i++){
         if (data[i].type == 'text'){
-            text += purifyString(data[i].content);
+            var pretext = purifyString(data[i].content);
+            //if pretext contains any emote contained in emotes.json, replace it with the emote
+            //separate pretext into words
+            var words = pretext.split(' ');
+            for (var j = 0; j < words.length; j++){
+                //if word is an emote
+                for (var e = 0; e < emotes.length; e++){
+                    if (words[j] == emotes[e].name){
+                        //replace the word with the emote
+                        words[j] = `<img src="7tv/${emotes[e].name}.gif" alt="" class="emoji-tv">`;
+                    }
+                }
+            }
+            for (var x = 0; x < words.length; x++){
+                //if word is " " or "" remove it
+                if (words[x] == " " || words[x] == ""){
+                    words.splice(x, 1);
+                }
+            }
+            if (words.length > 1){
+                pretext = words.join(' ');
+            }
+            else{
+                pretext = words[0];
+            }
+            text += pretext;
         } else if (data[i].type == 'emote'){
             text += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${data[i].id}/static/light/1.0" alt="" class="emote">`;
         }
@@ -42,8 +80,14 @@ function purifyString(string) {
     return string.replace(/<[^>]+>/g, '');
 }
 
+fetchJSONData().then((data) => {
+    emotes = data;
+    console.log(emotes);
+});
+
 socket.onopen = function(event){
     console.log('Connected to chat');
+    
 }
 
 socket.onmessage = function(event){
