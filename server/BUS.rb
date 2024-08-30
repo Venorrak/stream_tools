@@ -282,12 +282,12 @@ def treat_twitch_commands(data)
         msg = createMSG("twitch", "avatar", msg)
         sendToAllClients(msg)
       when "!discord"
-        #send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
+        send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
         send_twitch_message("venorrak", "You can see me talking on prod's discord server: https://discord.gg/JzPgeMp3EV or on Jake's discord server: https://discord.gg/MRjMmxQ6Wb")
       when "!commands"
-        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
+        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !commands, !JoelCount, !JoelTop")
       when "!c"
-        send_twitch_message("venorrak", "Commands: !color #ffffff, !rainbow, !dum, !song, !commands")
+        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !commands, !JoelCount, !JoelTop")
       when "!song"
         playback = getSpotidyPlaybackState()
         music_link = playback["item"]["external_urls"]["spotify"]
@@ -300,50 +300,6 @@ def treat_twitch_commands(data)
         msg = createMSG("twitch", "spotifyOverlay", msg)
         sendToAllClients(msg)
         $spotify_update_counter = 11
-      when "!JoelCount"
-        if words[1] != "" && words[1] != nil
-          #if there is a name 
-          username = words[1]
-          rep = $myWebPage.get("/api/joels/users/#{username.downcase}")
-          rep = JSON.parse(rep.body)
-          if rep["error"] != nil
-            send_twitch_message("venorrak", "User not found")
-          else
-            send_twitch_message("venorrak", "#{username} has #{rep["count"].to_i} Joels")
-          end
-        else
-          #if there is no name
-          rep = $myWebPage.get("/api/joels/users/#{data["payload"]["event"]["chatter_user_login"]}")
-          rep = JSON.parse(rep.body)
-          if rep["error"] != nil
-            send_twitch_message("venorrak", "You have no Joels")
-          else
-            send_twitch_message("venorrak", "#{data["payload"]["event"]["chatter_user_name"]} has #{rep["count"].to_i} Joels")
-          end
-        end
-      when "!JoelTop"
-        rep = $myWebPage.get("/api/joels/users?way=DESC&sort=count")
-        rep = JSON.parse(rep.body)
-        begin
-          if rep["error"] != nil
-            send_twitch_message("venorrak", "Bad request")
-          end
-        rescue
-          message = ""
-          rep.each_with_index do |user, index|
-            message += "#{index + 1} - #{user["name"]} (#{user["count"].to_i})"
-            if index > 3
-              break
-            else
-              message += ", "
-            end
-          end
-          send_twitch_message("venorrak", message)
-        end
-        
-
-      when "Joelest"
-        send_twitch_message("venorrak", "I'm the Joelest")
       end
   end
 end
@@ -526,6 +482,27 @@ def printBus(msg)
   puts "#{msg["time"] || Time.now().to_s.split(" ")[1]} - #{msg["from"]} to #{msg["to"]} : #{msg["payload"]}"
 end
 
+##### GODOT #####
+
+def updateLastFollower()
+  channel_id = getTwitchUserId("venorrak")
+  response = $APItwitch.get("/helix/channels/followers?broadcaster_id=#{channel_id}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+  end
+  payload = JSON.parse(response.body)
+  lastFollower = payload["data"][0]
+  msg = {
+    'command': 'last_follow_update',
+    'params': {},
+    'data': {
+      "name": lastFollower["user_name"]
+    }
+  }
+  msg = createMSG("twitch", "avatar", msg)
+  sendToAllClients(msg)
+end
+
 ##### POINTS #####
 
 def updatePoints()
@@ -542,13 +519,15 @@ def updatePoints()
   chatters = rep["data"]
   chatters.each do |chatter|
     user_twitch_id = chatter["user_id"]
-    user = $sqlGetUser.execute(user_twitch_id)
-    if user == []
+    user = $sqlGetUser.execute(user_twitch_id).first
+    if user.nil?
       $sqlNewUser.execute(chatter["user_login"], user_twitch_id)
-      $sqlNewPoints.execute(user_twitch_id)
+      new_user_id = $sqlGetUser.execute(user_twitch_id).first["id"]
+      $sqlNewPoints.execute(new_user_id)
     end
     if $points_users_last_scan.include?(chatter)
-      $sqlAddPoints.execute(10, user_twitch_id)
+      user_id = $sqlGetUser.execute(user_twitch_id).first["id"]
+      $sqlAddPoints.execute(10, user_id)
     else
       $points_users_last_scan.push(chatter)
     end
@@ -589,6 +568,7 @@ Thread.start do
       end
       if (now - $spotify_last_refresh) > 2500
         refreshSpotifyAccess()
+        $sql.query('SELECT 1;')
         $spotify_last_refresh = now
       end
       if (now - $points_last_refresh) > 300
@@ -642,6 +622,7 @@ Thread.start do
           data = createMSGTwitch("Follow", "#ffd000", message, "notif")
           msg = createMSG("twitch", "chat", data)
           sendToAllClients(msg)
+          updateLastFollower()
         when "channel.chat.message"
           message = []
           receivedData["payload"]["event"]["message"]["fragments"].each do |frag|
@@ -751,6 +732,7 @@ Thread.start do
     WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5963) do |ws|
       ws.onopen do
         $WsClients.push(ws)
+        updateLastFollower()
       end
 
       ws.onmessage do |msg|
