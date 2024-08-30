@@ -1,6 +1,6 @@
 socket = new WebSocket("ws://192.168.0.16:5963");
 var connected = false;
-var showing = true;
+var showing = false;
 
 socket.onopen = function (event) {
     connected = true;
