@@ -44,6 +44,8 @@ $me_twitch_id = nil
 $points_last_refresh = AbsoluteTime.now
 $points_users_last_scan = []
 
+$acceptedJoels = ["GoldenJoel" , "Joel2" , "Joeler" , "Joel" , "jol" , "JoelCheck" , "JoelbutmywindowsXPiscrashing" , "JOELLINES", "Joeling", "Joeling", "LetHimJoel", "JoelPride", "WhoLetHimJoel", "Joelest", "EvilJoel", "JUSSY", "JoelJams", "JoelTrain", "BarrelJoel", "JoelWide1", "JoelWide2", "Joeling2"]
+
 $spotify_auth_server = Faraday.new(url: "https://accounts.spotify.com") do |conn|
   conn.request :url_encoded
 end
@@ -503,6 +505,26 @@ def updateLastFollower()
   sendToAllClients(msg)
 end
 
+def treatJoels(data)
+  message = data["payload"]["event"]["message"]["text"]
+  words = message.split(" ")
+  nbJoelInMessage = 0
+  words.each do |word|
+    if $acceptedJoels.include?(word)
+      nbJoelInMessage += 1
+    end
+  end
+  if nbJoelInMessage > 0
+    msg = {
+      'command': 'Joel_Sent',
+      'params': {},
+      'data': {}
+    }
+    msg = createMSG("twitch", "avatar", msg)
+    sendToAllClients(msg)
+end
+end
+
 ##### POINTS #####
 
 def updatePoints()
@@ -648,6 +670,7 @@ Thread.start do
           data["profile_image_url"] = pfp_url
           msg = createMSG("twitch", "chat", data)
           sendToAllClients(msg)
+          treatJoels(receivedData)
           treat_twitch_commands(receivedData)
         when "channel.ad_break.begin"
           message = [
