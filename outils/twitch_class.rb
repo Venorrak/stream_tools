@@ -278,8 +278,9 @@ class Twitch
   end
 
   #function to get viewers of my channel with the API
-  def get_viewers()
-    response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{$me_id}&moderator_id=#{$me_id}") do |req|
+  def get_viewers(channelName)
+    channelId = getTwitchUser(channelName)["data"][0]["id"]
+    response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{channelId}&moderator_id=#{$me_id}") do |req|
         req.headers["Authorization"] = "Bearer #{$token}"
         req.headers["Client-Id"] = $twitch_bot_id
     end

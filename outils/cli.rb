@@ -233,8 +233,16 @@ def twitch_menu()
       twitch_menu()
     end
   when 16
-    status, rep = $twitch.get_viewers()
-    $twitch.printResults(status, rep)
+    print('Enter the channel name: ')
+    name = gets.chomp
+    if name != ""
+      status, rep = $twitch.get_viewers(name)
+      $twitch.printResults(status, rep)
+    else
+      puts "cancelled"
+      sleep(1)
+      twitch_menu()
+    end
   when 17
     print('Enter the channel name: ')
     name = gets.chomp
@@ -472,6 +480,7 @@ def test_menu()
     "send new music",
     "send music state",
     "send music show",
+    "send Joel",
     "back"
   ]
   system('clear')
@@ -611,6 +620,19 @@ def test_menu()
     $bus.send(msg.to_json)
     test_menu()
   when 9
+    msg = {
+      "from" => "twitch",
+      "to" => "avatar",
+      "time" => DateTime.now.to_s.split(" ")[1],
+      "payload" => {
+        "command": "Joel_Sent",
+        "params": {},
+        "data": {}
+      }
+    }
+    $bus.send(msg.to_json)
+    test_menu()
+  when 10
     main_menu()
   else
     puts('Invalid choice')
