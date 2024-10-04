@@ -4,6 +4,10 @@ class Spotify
     $twitch_token_password = twitch_token_password
     $myServer = myServer
     getAccess()
+    if $spotifyToken.nil?
+      puts "couldn't get spotify token on initialization"
+      exit
+    end
   end
 
   $spotifyToken = nil
@@ -15,11 +19,15 @@ class Spotify
   ##############################################################
 
   def getAccess()
-    response = $myServer.get("/token/spotify") do |req|
-      req.headers["Authorization"] = $twitch_token_password
+    begin
+      response = $myServer.get("/token/spotify") do |req|
+        req.headers["Authorization"] = $twitch_token_password
+      end
+      rep = JSON.parse(response.body)
+      $spotifyToken = rep["token"]
+    rescue
+      puts "stream server is down"
     end
-    rep = JSON.parse(response.body)
-    $spotifyToken = rep["token"]
   end
 
   def getPlaybackState()

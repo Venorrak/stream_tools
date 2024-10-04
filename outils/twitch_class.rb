@@ -17,7 +17,10 @@ class Twitch
     $token = nil
     $me_id = nil
     getAccess()
-
+    if $token.nil?
+        puts "couldn't get the token on initialization"
+        exit
+    end
     $me_id = getTwitchUser("venorrak")["data"][0]["id"]
   end
 
@@ -27,11 +30,15 @@ class Twitch
 
   #get token from the server
   def getAccess()
-    response = $myServer.get("/token/twitch") do |req|
-      req.headers["Authorization"] = $twitch_token_password
+    begin
+        response = $myServer.get("/token/twitch") do |req|
+        req.headers["Authorization"] = $twitch_token_password
+        end
+        rep = JSON.parse(response.body)
+        $token = rep["token"]
+    rescue
+        puts "stream server is down"
     end
-    rep = JSON.parse(response.body)
-    $token = rep["token"]
   end
 
   #print nicely the status and the data
@@ -278,8 +285,9 @@ class Twitch
   end
 
   #function to get viewers of my channel with the API
-  def get_viewers()
-    response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{$me_id}&moderator_id=#{$me_id}") do |req|
+  def get_viewers(channelName)
+    channelId = getTwitchUser(channelName)["data"][0]["id"]
+    response = $APItwitch.get("/helix/chat/chatters?broadcaster_id=#{channelId}&moderator_id=#{$me_id}") do |req|
         req.headers["Authorization"] = "Bearer #{$token}"
         req.headers["Client-Id"] = $twitch_bot_id
     end
