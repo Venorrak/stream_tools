@@ -287,9 +287,9 @@ def treat_twitch_commands(data)
         send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
         send_twitch_message("venorrak", "You can see me talking on prod's discord server: https://discord.gg/JzPgeMp3EV or on Jake's discord server: https://discord.gg/MRjMmxQ6Wb")
       when "!commands"
-        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !commands, !JoelCount, !JoelTop")
+        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !JoelCommands")
       when "!c"
-        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !commands, !JoelCount, !JoelTop")
+        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !JoelCommands")
       when "!song"
         playback = getSpotidyPlaybackState()
         music_link = playback["item"]["external_urls"]["spotify"]
