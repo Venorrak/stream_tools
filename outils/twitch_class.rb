@@ -17,7 +17,10 @@ class Twitch
     $token = nil
     $me_id = nil
     getAccess()
-
+    if $token.nil?
+        puts "couldn't get the token on initialization"
+        exit
+    end
     $me_id = getTwitchUser("venorrak")["data"][0]["id"]
   end
 
@@ -27,11 +30,15 @@ class Twitch
 
   #get token from the server
   def getAccess()
-    response = $myServer.get("/token/twitch") do |req|
-      req.headers["Authorization"] = $twitch_token_password
+    begin
+        response = $myServer.get("/token/twitch") do |req|
+        req.headers["Authorization"] = $twitch_token_password
+        end
+        rep = JSON.parse(response.body)
+        $token = rep["token"]
+    rescue
+        puts "stream server is down"
     end
-    rep = JSON.parse(response.body)
-    $token = rep["token"]
   end
 
   #print nicely the status and the data
