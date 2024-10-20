@@ -306,6 +306,134 @@ def treat_twitch_commands(data)
   end
 end
 
+def messageReceived(receivedData)
+  if receivedData["metadata"]["message_type"] == "session_welcome"
+    subscriptions = [
+      {"type": "channel.follow", "version": "2"},
+      {"type": "channel.ad_break.begin", "version": "1"},
+      {"type": "channel.chat.message", "version": "1"},
+      {"type": "channel.subscribe", "version": "1"},
+      {"type": "channel.subscription.gift", "version": "1"},
+      {"type": "channel.subscription.message", "version": "1"},
+      {"type": "channel.cheer", "version": "1"},
+      {"type": "channel.raid", "version": "1"}
+    ]
+    subscriptions.each do |sub|
+      rep = subscribeToTwitchEventSub(receivedData["payload"]["session"]["id"], sub)
+    end
+  end
+  if receivedData["metadata"]["message_type"] == "notification"
+    case receivedData["payload"]["subscription"]["type"]
+    when "channel.follow"
+      message = [
+        {
+          "type": "text",
+          "content": "#{receivedData["payload"]["event"]["user_name"]} has followed"
+        }
+      ]
+      data = createMSGTwitch("Follow", "#ffd000", message, "notif")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+      updateLastFollower()
+    when "channel.chat.message"
+      message = []
+      receivedData["payload"]["event"]["message"]["fragments"].each do |frag|
+        if frag["type"] == "text"
+          message.push({
+            "type": "text",
+            "content": frag["text"]
+          })
+        elsif frag["type"] == "emote"
+          message.push({
+              "type": "emote",
+              "id": frag["emote"]["id"]
+          })
+        else
+          message.push({
+            "type": "text",
+            "content": frag["text"]
+          })
+        end
+      end
+      pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
+      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default")
+      data["profile_image_url"] = pfp_url
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+      treatJoels(receivedData)
+      treat_twitch_commands(receivedData)
+    when "channel.ad_break.begin"
+      message = [
+        {
+          "type": "text",
+          "content": "ads playing for #{receivedData["payload"]["event"]["duration_seconds"]} seconds"
+        }
+      ]
+      data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+    when "channel.subscribe"
+      if receivedData["payload"]["event"]["is_gift"] == false
+        message = [
+          {
+            "type": "text",
+            "content": "#{receivedData["payload"]["event"]["user_name"]} has subscribed"
+          }
+        ]
+        data = createMSGTwitch("Subscribe", "00ff00", message, "subscribe")
+        msg = createMSG("twitch", "chat", data)
+        sendToBus(msg)
+      end
+    when "channel.subscription.gift"
+      if receivedData["payload"]["event"]["is_anonymous"] == false
+        message = [{
+          "type": "text",
+          "content": "#{receivedData["payload"]["event"]["gifter_name"]} has gifted #{receivedData["payload"]["event"]["total"]} subs"
+        }]
+      else
+        message = [{
+          "type": "text",
+          "content": "anonymous has gifted #{receivedData["payload"]["event"]["total"]} subs"
+        }]
+      end
+      data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+    when "channel.subscription.message"
+      message = [{
+        "type": "text",
+        "content": "#{receivedData["payload"]["event"]["user_name"]} has resubscribed :\n #{receivedData["payload"]["event"]["message"]["text"]}"
+      }]
+      data = createMSGTwitch("Resub", "#00ff00", message, "subscribe")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+    when "channel.cheer"
+      if receivedData["payload"]["event"]["is_anonymous"] == false
+        message = [{
+          "type": "text",
+          "content": "#{receivedData["payload"]["event"]["user_name"]} has cheered #{receivedData["payload"]["event"]["bits"]} bits"
+        }]
+      else
+        message = [{
+          "type": "text",
+          "content": "anonymous has cheered #{receivedData["payload"]["event"]["bits"]} bits"
+        }]
+      end
+      data = createMSGTwitch("Cheers", "#e100ff", message, "cheer")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+    when "channel.raid"
+      message = [{
+        "type": "text",
+        "content": "#{receivedData["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{receivedData["payload"]["event"]["viewers"]} viewers !"
+      }]
+      data = createMSGTwitch("Raid", "#00ccff", message, "raid")
+      msg = createMSG("twitch", "chat", data)
+      sendToBus(msg)
+    end
+  end
+end
+
 ##### SPOTIFY #####
 
 def refreshSpotifyAccess()
@@ -607,131 +735,7 @@ Thread.start do
         p "non-json sent by twitch"
         return
       end
-      if receivedData["metadata"]["message_type"] == "session_welcome"
-        subscriptions = [
-          {"type": "channel.follow", "version": "2"},
-          {"type": "channel.ad_break.begin", "version": "1"},
-          {"type": "channel.chat.message", "version": "1"},
-          {"type": "channel.subscribe", "version": "1"},
-          {"type": "channel.subscription.gift", "version": "1"},
-          {"type": "channel.subscription.message", "version": "1"},
-          {"type": "channel.cheer", "version": "1"},
-          {"type": "channel.raid", "version": "1"}
-        ]
-        subscriptions.each do |sub|
-          rep = subscribeToTwitchEventSub(receivedData["payload"]["session"]["id"], sub)
-        end
-      end
-      if receivedData["metadata"]["message_type"] == "notification"
-        case receivedData["payload"]["subscription"]["type"]
-        when "channel.follow"
-          message = [
-            {
-              "type": "text",
-              "content": "#{receivedData["payload"]["event"]["user_name"]} has followed"
-            }
-          ]
-          data = createMSGTwitch("Follow", "#ffd000", message, "notif")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-          updateLastFollower()
-        when "channel.chat.message"
-          message = []
-          receivedData["payload"]["event"]["message"]["fragments"].each do |frag|
-            if frag["type"] == "text"
-              message.push({
-                "type": "text",
-                "content": frag["text"]
-              })
-            elsif frag["type"] == "emote"
-              message.push({
-                  "type": "emote",
-                  "id": frag["emote"]["id"]
-              })
-            else
-              message.push({
-                "type": "text",
-                "content": frag["text"]
-              })
-            end
-          end
-          pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-          data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default")
-          data["profile_image_url"] = pfp_url
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-          treatJoels(receivedData)
-          treat_twitch_commands(receivedData)
-        when "channel.ad_break.begin"
-          message = [
-            {
-              "type": "text",
-              "content": "ads playing for #{receivedData["payload"]["event"]["duration_seconds"]} seconds"
-            }
-          ]
-          data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-        when "channel.subscribe"
-          if receivedData["payload"]["event"]["is_gift"] == false
-            message = [
-              {
-                "type": "text",
-                "content": "#{receivedData["payload"]["event"]["user_name"]} has subscribed"
-              }
-            ]
-            data = createMSGTwitch("Subscribe", "00ff00", message, "subscribe")
-            msg = createMSG("twitch", "chat", data)
-            sendToBus(msg)
-          end
-        when "channel.subscription.gift"
-          if receivedData["payload"]["event"]["is_anonymous"] == false
-            message = [{
-              "type": "text",
-              "content": "#{receivedData["payload"]["event"]["gifter_name"]} has gifted #{receivedData["payload"]["event"]["total"]} subs"
-            }]
-          else
-            message = [{
-              "type": "text",
-              "content": "anonymous has gifted #{receivedData["payload"]["event"]["total"]} subs"
-            }]
-          end
-          data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-        when "channel.subscription.message"
-          message = [{
-            "type": "text",
-            "content": "#{receivedData["payload"]["event"]["user_name"]} has resubscribed :\n #{receivedData["payload"]["event"]["message"]["text"]}"
-          }]
-          data = createMSGTwitch("Resub", "#00ff00", message, "subscribe")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-        when "channel.cheer"
-          if receivedData["payload"]["event"]["is_anonymous"] == false
-            message = [{
-              "type": "text",
-              "content": "#{receivedData["payload"]["event"]["user_name"]} has cheered #{receivedData["payload"]["event"]["bits"]} bits"
-            }]
-          else
-            message = [{
-              "type": "text",
-              "content": "anonymous has cheered #{receivedData["payload"]["event"]["bits"]} bits"
-            }]
-          end
-          data = createMSGTwitch("Cheers", "#e100ff", message, "cheer")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-        when "channel.raid"
-          message = [{
-            "type": "text",
-            "content": "#{receivedData["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{receivedData["payload"]["event"]["viewers"]} viewers !"
-          }]
-          data = createMSGTwitch("Raid", "#00ccff", message, "raid")
-          msg = createMSG("twitch", "chat", data)
-          sendToBus(msg)
-        end
-      end
+      messageReceived(receivedData)
     end
 
     ws.on :close do |event|
