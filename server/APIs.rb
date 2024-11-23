@@ -71,6 +71,10 @@ $sqlGetUser = $sql.prepare("SELECT id, name FROM users WHERE twitch_id = ?;")
 $sqlAddPoints = $sql.prepare("UPDATE points SET points = points + ? WHERE user_id = ?;")
 $sqlRemovePoints = $sql.prepare("UPDATE points SET points = points - ? WHERE user_id = ?;")
 $sqlGetPoints = $sql.prepare("SELECT points FROM points WHERE user_id = ?;")
+$sqlCreateLore = $sql.prepare("INSERT INTO lore (word, count) VALUES (?, 1);")
+$sqlUpdateLore = $sql.prepare("UPDATE lore SET count = count + 1 WHERE word = ?;")
+$sqlGetLore = $sql.prepare("SELECT count FROM lore WHERE word = ?;")
+$sqlGetHighestLore = $sql.prepare("SELECT word, count FROM lore ORDER BY count DESC LIMIT 1;")
 
 ##### ROUTES #####
 
@@ -251,7 +255,7 @@ end
 def treat_twitch_commands(data)
   first_frag = data["payload"]["event"]["message"]["fragments"][0]
     if first_frag["type"] == "text"
-      words = first_frag["text"].split(" ")
+      words = first_frag["text"].strip.split(" ")
       case words[0].downcase
       when "!color"
           color = words[1]
@@ -302,8 +306,47 @@ def treat_twitch_commands(data)
         msg = createMSG("twitch", "spotifyOverlay", msg)
         sendToBus(msg)
         $spotify_update_counter = 11
+      when "!lore"
+        if words[1] != nil
+          lore = $sqlGetLore.execute(words[1]).first
+          if lore.nil?
+            send_twitch_message("venorrak", "No lore for this word")
+          else
+            send_twitch_message("venorrak", "Lore for #{words[1]}: #{lore["count"]}")
+          end
+        else
+          send_twitch_message("venorrak", "No word specified")
+        end
       end
   end
+end
+
+def treatForLore(messageData)
+  textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
+  words = textContent.split(" ")
+  words.each do |word|
+    lore = $sqlGetLore.execute(word).first
+    if lore.nil?
+      $sqlCreateLore.execute(word)
+    else
+      $sqlUpdateLore.execute(word)
+    end
+  end
+end
+
+def calculateLoreScore(messageData)
+  textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
+  highestScore = $sqlGetHighestLore.execute().first
+  words = textContent.split(" ")
+  score = 0
+  words.each do |word|
+    lore = $sqlGetLore.execute(word).first
+    if !lore.nil?
+      score += lore["count"] / highestScore["count"]
+    end
+  end
+  score = score / words.length
+  return score
 end
 
 def messageReceived(receivedData)
@@ -356,11 +399,12 @@ def messageReceived(receivedData)
         end
       end
       pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default")
+      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", calculateLoreScore(receivedData))
       data["profile_image_url"] = pfp_url
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
       treatJoels(receivedData)
+      treatForLore(receivedData)
       treat_twitch_commands(receivedData)
     when "channel.ad_break.begin"
       message = [
@@ -583,12 +627,13 @@ def createMSG(from, to, data)
   }
 end
 
-def createMSGTwitch(name, name_color, message, type)
+def createMSGTwitch(name, name_color, message, type, loreScore = 0)
   return {
     "name": name,
     "name_color": name_color,
     "message": message,
-    "type": type
+    "type": type,
+    "lore_score": loreScore
   }
 end
 
