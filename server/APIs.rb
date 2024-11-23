@@ -336,16 +336,16 @@ end
 
 def calculateLoreScore(messageData)
   textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
-  highestScore = $sqlGetHighestLore.execute().first
+  highestScore = $sqlGetHighestLore.execute().first["count"]
   words = textContent.split(" ")
   score = 0
   words.each do |word|
     lore = $sqlGetLore.execute(word).first
     if !lore.nil?
-      score += lore["count"] / highestScore["count"]
+      score += lore["count"].to_f / highestScore.to_f
     end
   end
-  score = score / words.length
+  score = score / words.length.to_f
   return score
 end
 
@@ -399,7 +399,7 @@ def messageReceived(receivedData)
         end
       end
       pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", calculateLoreScore(receivedData))
+      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", calculateLoreScore(receivedData).round(2))
       data["profile_image_url"] = pfp_url
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
