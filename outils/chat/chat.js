@@ -15,7 +15,7 @@ function fetchJSONData() {
     })
 }
 
-function build_message(data, lore_score){
+function build_message(data){
     var text = ``;
     for (var i = 0; i < data.length; i++){
         if (data[i].type == 'text'){
@@ -49,7 +49,6 @@ function build_message(data, lore_score){
             text += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${data[i].id}/static/light/1.0" alt="" class="emote">`;
         }
     }
-    text += ` [${lore_score}]`;
     return text;
 }
 
@@ -138,6 +137,7 @@ socket.onmessage = function(event){
         var line = document.createElement('hr');
 
         dataP.innerHTML = build_message(data.payload.message, data.payload.lore_score);
+        dataP.style.color = `rgba(${255 * (1 - data.payload.lore_score)}, 255, ${255 * (1 - data.payload.lore_score)}, 1)`;
 
         dataDiv.appendChild(dataP);
         message.appendChild(name);
