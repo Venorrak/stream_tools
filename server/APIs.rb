@@ -5,6 +5,7 @@ require 'eventmachine'
 require 'absolute_time'
 require "awesome_print"
 require "openssl"
+require 'remove_emoji'
 
 gemfile do
   source "https://rubygems.org"
@@ -325,11 +326,12 @@ def treatForLore(messageData)
   textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
   words = textContent.split(" ")
   words.each do |word|
-    lore = $sqlGetLore.execute(word).first
+    sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
+    lore = $sqlGetLore.execute(sanitizedWord).first rescue nil
     if lore.nil?
-      $sqlCreateLore.execute(word)
+      $sqlCreateLore.execute(sanitizedWord)
     else
-      $sqlUpdateLore.execute(word)
+      $sqlUpdateLore.execute(sanitizedWord)
     end
   end
 end
@@ -340,7 +342,10 @@ def calculateLoreScore(messageData)
   words = textContent.split(" ")
   score = 0
   words.each do |word|
-    lore = $sqlGetLore.execute(word).first
+    sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
+    if sanitizedWord != ""
+      lore = $sqlGetLore.execute(sanitizedWord).first rescue nil
+    end
     if !lore.nil?
       score += lore["count"].to_f / highestScore.to_f
     end
