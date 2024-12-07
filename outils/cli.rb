@@ -24,7 +24,7 @@ require_relative "obs_class.rb"
 require_relative "godot_class.rb"
 require_relative "spotify_class.rb"
 
-$myServer = Faraday.new(url: "http://192.168.0.16:9898") do |conn|
+$myServer = Faraday.new(url: "http://192.168.0.16:5002") do |conn|
   conn.request :url_encoded
 end
 
@@ -772,7 +772,7 @@ Thread.start do
       rescue
         data = event.data
       end
-      if data["to"] == "cli" && data["from"] == "BUS"
+      if data["to"] == "all" && data["from"] == "BUS"
         if data["payload"]["type"] == "token_refreshed"
           case data["payload"]["client"]
           when "twitch"

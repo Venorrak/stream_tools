@@ -10,32 +10,21 @@ require 'remove_emoji'
 gemfile do
   source "https://rubygems.org"
   gem "faraday"
-  gem 'sinatra-contrib'
-  gem 'rackup'
-  gem 'webrick'
   gem "mysql2"
-  require 'sinatra'
 end
 
 require "faraday"
 require "mysql2"
 require_relative "secret.rb"
 
-set :port, 9898
-set :bind, '0.0.0.0'
-
 $online = false
 $bus = nil
 
 $spotify_token = nil
-$spotify_refresh_token = nil
-$spotify_last_refresh = AbsoluteTime.now
 $spotify_last_song_played = nil
 $spotify_update_counter = 0
 
 $twitch_token = nil
-$twitch_refresh_token = nil
-$twitch_last_refresh = AbsoluteTime.now
 $me_twitch_id = nil
 
 $points_last_refresh = AbsoluteTime.now
@@ -43,13 +32,11 @@ $points_users_last_scan = []
 
 $acceptedJoels = ["GoldenJoel" , "Joel2" , "Joeler" , "Joel" , "jol" , "JoelCheck" , "JoelbutmywindowsXPiscrashing" , "JOELLINES", "Joeling", "Joeling", "LetHimJoel", "JoelPride", "WhoLetHimJoel", "Joelest", "EvilJoel", "JUSSY", "JoelJams", "JoelTrain", "BarrelJoel", "JoelWide1", "JoelWide2", "Joeling2"]
 
-$spotify_auth_server = Faraday.new(url: "https://accounts.spotify.com") do |conn|
+$TokenService = Faraday.new(url: "http://192.168.0.16:5002") do |conn|
   conn.request :url_encoded
 end
 
-$twitch_auth_server = Faraday.new(url: "https://id.twitch.tv") do |conn|
-  conn.request :url_encoded
-end
+$SQLService = Faraday.new(url: "http://192.168.0.16:5001")
 
 $APItwitch = Faraday.new(url: "https://api.twitch.tv") do |conn|
   conn.request :url_encoded
@@ -59,121 +46,17 @@ $spotify_api_server = Faraday.new(url: "https://api.spotify.com") do |conn|
   conn.request :url_encoded
 end
 
-$myWebPage = Faraday.new(url: "https://server.venorrak.dev") do |conn|
-  conn.request :url_encoded
-end
-
-$sql = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234")
-$sql.query("USE stream;")
-
-$sqlNewUser = $sql.prepare("INSERT INTO users (name, twitch_id) VALUES (?, ?);")
-$sqlNewPoints = $sql.prepare("INSERT INTO points (user_id, points) VALUES (?, 0);")
-$sqlGetUser = $sql.prepare("SELECT id, name FROM users WHERE twitch_id = ?;")
-$sqlAddPoints = $sql.prepare("UPDATE points SET points = points + ? WHERE user_id = ?;")
-$sqlRemovePoints = $sql.prepare("UPDATE points SET points = points - ? WHERE user_id = ?;")
-$sqlGetPoints = $sql.prepare("SELECT points FROM points WHERE user_id = ?;")
-$sqlCreateLore = $sql.prepare("INSERT INTO lore (word, count) VALUES (?, 1);")
-$sqlUpdateLore = $sql.prepare("UPDATE lore SET count = count + 1 WHERE word = ?;")
-$sqlGetLore = $sql.prepare("SELECT count FROM lore WHERE word = ?;")
-$sqlGetHighestLore = $sql.prepare("SELECT word, count FROM lore ORDER BY count DESC LIMIT 1;")
-
-##### ROUTES #####
-
-get '/token/spotify' do
-  if request.env['HTTP_AUTHORIZATION'] == $spotify_safety_string
-    return [
-      200,
-      {"Content-Type" => "application/json"},
-      {"token" => $spotify_token}.to_json
-    ]
-  else
-    return [
-      401,
-      {"Content-Type" => "text/html"},
-      ["<p>Unauthorized</p>"]
-    ]
-  end
-end
-
-get '/token/twitch' do
-  if request.env['HTTP_AUTHORIZATION'] == $twitch_safety_string
-    return [
-      200,
-      {"Content-Type" => "application/json"},
-      {"token" => $twitch_token}.to_json
-    ]
-  else
-    return [
-      401,
-      {"Content-Type" => "text/html"},
-      ["<p>Unauthorized</p>"]
-    ]
-  end
-end
-
-get '/callback' do
-  if !params['error'].nil?
-    p params['error']
-    break
-  end
-  code = params['code']
-  get_spotify_token(code)
-  return [
-    200,
-    {"Content-Type" => "text/html"},
-    ["<p>Spotify token received</p>"]
-  ]
-end
-
 ##### TWITCH #####
 
-def getTwitchAccess()
-  oauthToken = nil
-  #https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#device-code-grant-flow
-  response = $twitch_auth_server.post("/oauth2/device") do |req|
-      req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-      req.body = "client_id=#{$twitch_bot_id}&scopes=chat:read+chat:edit+user:bot+user:write:chat+channel:bot+user:manage:whispers+channel:moderate+moderator:read:followers+user:read:chat+channel:read:ads+channel:read:subscriptions+bits:read+moderator:manage:shoutouts+moderator:manage:announcements+channel:edit:commercial+moderator:manage:shoutouts+channel:manage:raids+moderator:read:chatters+channel:manage:vips+channel:manage:ads+channel:manage:broadcast"
-  end
-  rep = JSON.parse(response.body)
-  device_code = rep["device_code"]
-
-  # wait for user to authorize the app
-  puts "Please go to #{rep["verification_uri"]} and enter the code #{rep["user_code"]}"
-  puts "Press enter when you have authorized the app"
-  wait = gets.chomp
-
-  #https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow
-  response = $twitch_auth_server.post("/oauth2/token") do |req|
-      req.body = "client_id=#{$twitch_bot_id}&scopes=channel:manage:broadcast,user:manage:whispers&device_code=#{device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code"
-  end
-  rep = JSON.parse(response.body)
-  $twitch_token = rep["access_token"]
-  $twitch_refresh_token = rep["refresh_token"]
-end
-
-def refreshTwitchAccess()
-  #https://dev.twitch.tv/docs/authentication/refresh-tokens/#how-to-use-a-refresh-token
-  response = $twitch_auth_server.post("/oauth2/token") do |req|
-      req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-      req.body = "grant_type=refresh_token&refresh_token=#{$twitch_refresh_token}&client_id=#{$twitch_bot_id}&client_secret=#{$twitch_bot_secret}"
-  end
+def getTwitchToken()
   begin
+    response = $TokenService.get("/token/twitch") do |req|
+      req.headers["Authorization"] = $twitch_safety_string
+    end
     rep = JSON.parse(response.body)
+    $twitch_token = rep["token"]
   rescue
-    p response.body
-    return
-  end
-  if !rep["access_token"].nil? && !rep["refresh_token"].nil?
-    $twitch_token = rep["access_token"]
-    $twitch_refresh_token = rep["refresh_token"]
-    msg = createMSG("BUS", "cli", {
-      "type": "token_refreshed",
-      "client": "twitch"
-    })
-    sendToBus(msg)
-  else
-    p "error refreshing twitch token"
-    p rep
+    puts "Token Service is down"
   end
 end
 
@@ -327,24 +210,24 @@ def treatForLore(messageData)
   words = textContent.split(" ")
   words.each do |word|
     sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
-    lore = $sqlGetLore.execute(sanitizedWord).first rescue nil
+    lore = sendQuery("GetLore", [sanitizedWord])
     if lore.nil?
-      $sqlCreateLore.execute(sanitizedWord)
+      sendQuery("NewLore", [sanitizedWord])
     else
-      $sqlUpdateLore.execute(sanitizedWord)
+      sendQuery("UpdateLore", [sanitizedWord])
     end
   end
 end
 
 def calculateLoreScore(messageData)
   textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
-  highestScore = $sqlGetHighestLore.execute().first["count"]
+  highestScore = sendQuery("GetHighestLore", [])["count"]
   words = textContent.split(" ")
   score = 0
   words.each do |word|
     sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
     if sanitizedWord != ""
-      lore = $sqlGetLore.execute(sanitizedWord).first rescue nil
+      lore = sendQuery("GetLore", [sanitizedWord])
     end
     if !lore.nil?
       score += lore["count"].to_f / highestScore.to_f
@@ -485,71 +368,15 @@ end
 
 ##### SPOTIFY #####
 
-def refreshSpotifyAccess()
-  body = {
-    "grant_type": "refresh_token",
-    "refresh_token": $spotify_refresh_token
-  }
-  body_encoded = URI.encode_www_form(body)
+def getSpotifyToken()
   begin
-    response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
-      req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-      req.headers["Authorization"] = "Basic " + Base64.strict_encode64("#{$spotify_client_id}:#{$spotify_client_secret}")
+    response = $TokenService.get("/token/spotify") do |req|
+      req.headers["Authorization"] = $spotify_safety_string
     end
+    rep = JSON.parse(response.body)
+    $spotify_token = rep["token"]
   rescue
-    p "error accessing spotify server"
-    return
-  end
-  if response.status != 200
-    p response.status
-    p response.body
-  else
-    rep = JSON.parse(response.body)
-    if !rep['access_token'].nil?
-      $spotify_token = rep['access_token']
-      msg = createMSG("BUS", "cli", {
-        "type": "token_refreshed",
-        "client": "spotify"
-      })
-      sendToBus(msg)
-    else
-      p "error refreshing spotify token"
-      p rep
-    end
-  end
-end
-
-def authorize_spotify()
-  response = $spotify_auth_server.get("/authorize") do |req|
-    req.params["client_id"] = $spotify_client_id
-    req.params["response_type"] = "code"
-    req.params["redirect_uri"] = "http://192.168.0.16:9898/callback" #TODO: change 
-    req.params["scope"] = "app-remote-control streaming user-read-playback-state user-modify-playback-state"  
-    req.params["state"] = SecureRandom.alphanumeric(16)
-  end
-  p response.headers["location"]
-end
-
-def get_spotify_token(code)
-  body = {
-    grant_type: "authorization_code",
-    code: code,
-    redirect_uri: "http://192.168.0.16:9898/callback" #TODO: change
-  }
-  body_encoded = URI.encode_www_form(body)
-  response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
-    req.headers["Authorization"] = "Basic " + Base64.strict_encode64("#{$spotify_client_id}:#{$spotify_client_secret}")
-    req.headers["Content-Type"] = "application/x-www-form-urlencoded"
-  end
-  if response.status != 200
-    p response.status
-    p "error getting token"
-  else
-    rep = JSON.parse(response.body)
-    $spotify_token = rep['access_token']
-    $spotify_refresh_token = rep['refresh_token']
-    $online = true
-    p "expires in: #{rep['expires_in']}"
+    puts "Token Service is down"
   end
 end
 
@@ -649,6 +476,23 @@ def sendToBus(msg)
   $bus.send(msg)
 end
 
+def sendQuery(queryName, body)
+  begin
+    response = $SQLService.post("/stream/#{queryName}") do |req|
+      req.headers['Content-Type'] = 'application/json'
+      req.body = body.to_json
+    end
+    if response.status != 200
+      p response.status
+      p response.body
+    else
+      return JSON.parse(response.body)
+    end
+  rescue
+    return {}
+  end
+end
+
 ##### GODOT #####
 
 def updateLastFollower()
@@ -708,15 +552,15 @@ def updatePoints()
   chatters = rep["data"]
   chatters.each do |chatter|
     user_twitch_id = chatter["user_id"]
-    user = $sqlGetUser.execute(user_twitch_id).first
+    user = sendQuery("getUser", [user_twitch_id])
     if user.nil?
-      $sqlNewUser.execute(chatter["user_login"], user_twitch_id)
-      new_user_id = $sqlGetUser.execute(user_twitch_id).first["id"]
-      $sqlNewPoints.execute(new_user_id)
+      sendQuery("NewUser", [chatter["user_login"], user_twitch_id])
+      new_user_id = sendQuery("GetUser", [user_twitch_id])["id"]
+      sendQuery("NewPoints", [new_user_id])
     end
     if $points_users_last_scan.include?(chatter)
-      user_id = $sqlGetUser.execute(user_twitch_id).first["id"]
-      $sqlAddPoints.execute(10, user_id)
+      user_id = sendQuery("GetUser", [user_twitch_id])["id"]
+      sendQuery("AddPoints", [10, user_id])
     else
       $points_users_last_scan.push(chatter)
     end
@@ -738,28 +582,25 @@ end
 
 ##### MAIN #####
 
-getTwitchAccess()
+getTwitchToken()
+getSpotifyToken()
+
+if $twitch_token.nil? || $spotify_token.nil?
+  p "ERROR: tokens not retrieved"
+  exit
+end
 $me_twitch_id = getTwitchUserId("venorrak")
 if $me_twitch_id.nil?
   p "WARNING error getting twitch id for venorrak"
   exit
 end
-authorize_spotify()
+$online = true
 
 Thread.start do
   loop do
     sleep(1)
     if $online
       now = AbsoluteTime.now
-      if (now - $twitch_last_refresh) > 7200
-        refreshTwitchAccess()
-        $twitch_last_refresh = now
-      end
-      if (now - $spotify_last_refresh) > 2500
-        refreshSpotifyAccess()
-        $sql.query('SELECT 1;')
-        $spotify_last_refresh = now
-      end
       if (now - $points_last_refresh) > 300
         updatePoints()
         $points_last_refresh = now
@@ -794,32 +635,41 @@ Thread.start do
   }
 end
 
-Thread.start do
-  EM.run do
-    bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
+EM.run do
+  bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
 
-    bus.on :open do |event|
-      p [:open, "BUS"]
-      $bus = bus
+  bus.on :open do |event|
+    p [:open, "BUS"]
+    $bus = bus
+  end
+
+  bus.on :message do |event|
+    begin
+      data = JSON.parse(event.data)
+    rescue
+      data = event.data
+    end
+    if data["to"] == "BUS" && data["from"] == "BUS" && data["payload"] == "New client connected"
+      updateLastFollower()
     end
 
-    bus.on :message do |event|
-      begin
-        data = JSON.parse(event.data)
-      rescue
-        data = event.data
+    if data["to"] == "all" && data["from"] == "BUS"
+      if data["payload"]["type"] == "token_refreshed"
+        case data["payload"]["client"]
+        when "twitch"
+          getTwitchToken()
+        when "spotify"
+          getSpotifyToken()
+        end
       end
-      if data["to"] == "BUS" && data["from"] == "BUS" && data["payload"] == "New client connected"
-        updateLastFollower()
-      end
     end
+  end
 
-    bus.on :error do |event|
-      p [:error, event.message, "BUS"]
-    end
+  bus.on :error do |event|
+    p [:error, event.message, "BUS"]
+  end
 
-    bus.on :close do |event|
-      p [:close, event.code, event.reason, "BUS"]
-    end
+  bus.on :close do |event|
+    p [:close, event.code, event.reason, "BUS"]
   end
 end
