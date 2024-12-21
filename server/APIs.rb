@@ -470,10 +470,15 @@ def createMSGTwitch(name, name_color, message, type, loreScore = 0)
 end
 
 def sendToBus(msg)
-  if msg.is_a?(Hash)
-    msg = msg.to_json
+  begin
+    if msg.is_a?(Hash)
+      msg = msg.to_json
+    end
+    $bus.send(msg)
+  rescue => e
+    p e
+    return
   end
-  $bus.send(msg)
 end
 
 def sendQuery(queryName, body)
@@ -552,7 +557,7 @@ def updatePoints()
   chatters = rep["data"]
   chatters.each do |chatter|
     user_twitch_id = chatter["user_id"]
-    user = sendQuery("getUser", [user_twitch_id])
+    user = sendQuery("GetUser", [user_twitch_id])
     if user.nil?
       sendQuery("NewUser", [chatter["user_login"], user_twitch_id])
       new_user_id = sendQuery("GetUser", [user_twitch_id])["id"]

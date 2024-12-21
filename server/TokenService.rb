@@ -232,6 +232,7 @@ authorize_spotify()
 Thread.start do
   loop do
     now = Time.now.to_i
+    sleep(60)
 
     if (now - $twitch_last_refresh) > 3600
       refreshTwitchAccess()

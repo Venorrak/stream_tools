@@ -13,8 +13,8 @@ end
 
 require 'mysql2'
 
-$JoelDB = Mysql2::Client.new(:host => "localhost", :username => "bot", :password => "joel", :reconnect => true, :database => "joelScan")
-$StreamDB = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234", :reconnect => true, :database => "stream")
+$JoelDB = Mysql2::Client.new(:host => "localhost", :username => "bot", :password => "joel", :reconnect => true, :database => "joelScan", idle_timeout: 0)
+$StreamDB = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234", :reconnect => true, :database => "stream", idle_timeout: 0)
 
 # PREPARED STATEMENTS
 
@@ -61,7 +61,7 @@ $JoelGetTop5JoelsChannel = $JoelDB.prepare("SELECT channels.name, channelJoels.c
 
 $JoelGetBasicStats = $JoelDB.prepare("SELECT joels.count as totalJoels, users.creationDate as firstJoelDate FROM users JOIN joels ON users.id = joels.user_id WHERE users.name = ? LIMIT 1;")
 $JoelGetMostJoelStreamStats = $JoelDB.prepare("SELECT channels.name as MostJoelsInStreamStreamer, streamUsersJoels.count as mostJoelsInStream, streamJoels.streamDate as mostJoelsInStreamDate FROM users JOIN streamUsersJoels ON users.id = streamUsersJoels.user_id JOIN streamJoels ON streamUsersJoels.stream_id = streamJoels.id JOIN channels ON streamJoels.channel_id = channels.id WHERE users.name = ? AND streamUsersJoels.count = (SELECT MAX(streamUsersJoels.count) FROM streamUsersJoels WHERE user_id = users.id);")
-$JoelGetMostJoeledStreamerStats = $JoelDB.prepare("SELECT channels.name as mostJoeledStreamer, (SELECT SUM(streamUsersJoels.count) WHERE streamUsersJoels.user_id = users.id AND streamUsersJoels.stream_id = streamJoels.id ) as count FROM users JOIN streamUsersJoels ON users.id = streamUsersJoels.user_id JOIN streamJoels ON streamUsersJoels.stream_id = streamJoels.id JOIN channels ON streamJoels.channel_id = channels.id WHERE users.name = ? GROUP BY channels.id ORDER BY count DESC;")
+$JoelGetMostJoeledStreamerStats = $JoelDB.prepare("SELECT channels.name as mostJoeledStreamer, CAST(SUM(streamUsersJoels.count) AS INTEGER) as count FROM users JOIN streamUsersJoels ON users.id = streamUsersJoels.user_id JOIN streamJoels ON streamUsersJoels.stream_id = streamJoels.id JOIN channels ON streamJoels.channel_id = channels.id WHERE users.name = ? GROUP BY channels.id ORDER BY count DESC;")
 
 # REFRENCES
 
@@ -296,7 +296,7 @@ def JoelGetMostJoelStreamStats(name)
 end
 
 def JoelGetMostJoeledStreamerStats(name)
-  return $JoelGetMostJoeledStreamerStats.execute(name).to_a
+  return $JoelGetMostJoeledStreamerStats.execute(name).first
 end
 
 # SINATRA
@@ -320,6 +320,14 @@ post '/stream/:requestName' do
       {"content-type" => "application/json"},
       send(requestLink, *requestBody).to_json
     ]
+  rescue Mysql2::Error::ConnectionError => e
+    p e
+    restartSQLConnection()
+    return [
+      500,
+      {},
+      "Lost connection to MySQL server during query"
+    ]
   rescue => e
     p e
     return [
@@ -332,9 +340,7 @@ end
 
 post '/joel/:requestName' do
   requestBody = JSON.parse(request.body.read)
-  p params[:requestName]
   requestLink = $JoelRequestRefrenceList[params[:requestName]]
-  p requestLink
   if requestLink.nil?
     return [
       404,
@@ -348,6 +354,14 @@ post '/joel/:requestName' do
       {"content-type" => "application/json"},
       send(requestLink, *requestBody).to_json
     ]
+  rescue Mysql2::Error::ConnectionError => e
+    p e
+    restartSQLConnection()
+    return [
+      500,
+      {},
+      "Lost connection to MySQL server during query"
+    ]
   rescue => e
     p e
     return [
@@ -356,4 +370,12 @@ post '/joel/:requestName' do
       "wrong number of arguments"
     ]
   end
+end
+
+def restartSQLConnection()
+  $JoelDB.close
+  $StreamDB.close
+  exec("ruby SQLService.rb")
+  $JoelDB = Mysql2::Client.new(:host => "localhost", :username => "bot", :password => "joel", :reconnect => true, :database => "joelScan", idle_timeout: 0)
+  $StreamDB = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234", :reconnect => true, :database => "stream", idle_timeout: 0)
 end
