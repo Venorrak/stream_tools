@@ -413,9 +413,10 @@ def godot_menu()
     'green_screen_on_off',
     'reset connection',
     'dum_on_off',
-    'brb_on_off',
-    'starting_on_off',
-    'zoom_on_off',
+    'go to brb',
+    'go to starting',
+    'go to zoom',
+    'go to default',
     'back'
   ]
   choices.each_with_index do |choice, index|
@@ -453,15 +454,18 @@ def godot_menu()
     $godot.dum_on_off()
     godot_menu()
   when 10
-    $godot.brb_on_off()
+    $godot.goToBrb()
     godot_menu()
   when 11
-    $godot.starting_on_off()
+    $godot.goToStarting()
     godot_menu()
   when 12
-    $godot.zoom_on_off()
+    $godot.goToZoom()
     godot_menu()
   when 13
+    $godot.goToDefault()
+    godot_menu()
+  when 14
     main_menu()
   else
     puts('Invalid choice')

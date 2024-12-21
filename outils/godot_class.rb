@@ -17,27 +17,36 @@ class Godot
   #       Godot functions      #
   ##############################
 
-  def zoom_on_off()
+  def goToBrb()
     msg = {
-      'command': 'zoom_in_out',
+      'command': 'goToBrb',
       'params': {},
       'data': {}
     }
     send_to_godot(msg)
   end
 
-  def starting_on_off()
+  def goToStarting()
     msg = {
-      'command': 'starting_on_off',
+      'command': 'goToStarting',
       'params': {},
       'data': {}
     }
     send_to_godot(msg)
   end
 
-  def brb_on_off()
+  def goToZoom()
     msg = {
-      'command': 'brb_on_off',
+      'command': 'goToZoom',
+      'params': {},
+      'data': {}
+    }
+    send_to_godot(msg)
+  end
+
+  def goToDefault()
+    msg = {
+      'command': 'goToDefault',
       'params': {},
       'data': {}
     }
