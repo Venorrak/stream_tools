@@ -5,7 +5,7 @@ import time
 import json
 import socket
 
-HOST = "172.31.224.1"
+HOST = "127.0.0.1"
 PORT = 12345
 
 def getXY(pt):
@@ -45,8 +45,7 @@ def main():
             msg = json.dumps(landmarks)
             #send json to godot with socket
             now_time = time.time()
-            if now_time - last_time > 0:
-                print("sent")
+            if now_time - last_time > 0.00:
                 sock.sendto(msg.encode("ascii"), (HOST, PORT))
                 last_time = time.time()
         if cv2.waitKey(1) & 0xFF == ord('q'):
