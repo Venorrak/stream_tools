@@ -9,7 +9,7 @@ class OBS
     begin
       Thread.start do
         EM.run do
-          ws = Faye::WebSocket::Client.new("ws://192.168.0.18:4455")
+          ws = Faye::WebSocket::Client.new("ws://192.168.0.25:4455")
           function_called = false
 
           ws.on :open do |event|
@@ -223,6 +223,20 @@ class OBS
         "requestId": SecureRandom.uuid,
         "requestData": {
           "sceneName": scene_name
+        }
+      }
+    }
+  end
+
+  def get_item_source(item_id, scene_name)
+    return {
+      "op": 6,
+      "d": {
+        "requestType": "GetSceneItemSource",
+        "requestId": SecureRandom.uuid,
+        "requestData": {
+          "sceneName": scene_name,
+          "sceneItemId": item_id
         }
       }
     }
