@@ -4,10 +4,13 @@ from win32gui import FindWindow, GetWindowRect
 import obswebsocket
 from obswebsocket import obsws, requests
 import time
+import os
+from dotenv import load_dotenv
 
 host = "192.168.0.25"
 port = 4455
-password = "oODNlUM7qwL7n2up"
+load_dotenv()
+password = os.getenv("PASSWORD")
 
 ws = obsws(host, port, password)
 
