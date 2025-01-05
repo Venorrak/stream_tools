@@ -241,4 +241,35 @@ class OBS
       }
     }
   end
+
+  def get_item_available_sources(item_name)
+    return {
+      "op": 6,
+      "d": {
+        "requestType": "GetInputPropertiesListPropertyItems",
+        "requestId": SecureRandom.uuid,
+        "requestData": {
+          "inputName": item_name,
+          "propertyName": "window"
+        }
+      }
+    }
+  end
+
+  def set_item_source(item_name, source)
+    return {
+      "op": 6,
+      "d": {
+        "requestType": "SetInputSettings",
+        "requestId": SecureRandom.uuid,
+        "requestData": {
+          "inputName": item_name,
+          "inputSettings": {
+            "window": source
+          },
+          "overlay": true
+        }
+      }
+    }
+  end
 end

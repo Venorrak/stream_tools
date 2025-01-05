@@ -287,6 +287,7 @@ def obs_menu()
       "set current scene",
       "set item invisible",
       "set item visible",
+      "change item Source",
       'back'
   ]
   choices.each_with_index do |choice, index|
@@ -393,6 +394,35 @@ def obs_menu()
     end
     obs_menu()
   when 5
+    $obs.obs_request(:get_item_list, ["spout"])
+    sleep(0.5)
+    items = $obs.get_data()
+    if items != nil
+      items["d"]["responseData"]["sceneItems"].each do |item|
+        p item["sourceName"]
+      end
+      puts "choose an item"
+      item = gets.chomp
+      $obs.obs_request(:get_item_available_sources, [item])
+      sleep(0.5)
+      sources = $obs.get_data()
+      if sources != nil && sources["d"]["responseData"]["propertyItems"].length > 0
+        sources = sources["d"]["responseData"]["propertyItems"]
+        sourcesValue = []
+        sources.count.times do |i|
+          if sources[i]["itemEnabled"] == true
+            sourcesValue.push(sources[i]["itemValue"])
+          end
+        end
+        ap sourcesValue
+        puts "choose a source (number)"
+        source = sourcesValue[gets.chomp.to_i]
+        $obs.obs_request(:set_item_source, [item, source])
+        $obs.process_data(false)
+      end
+    end
+    obs_menu()
+  when 6
     main_menu()
   else
     puts('Invalid choice')
@@ -506,6 +536,7 @@ def test_menu()
           {"type" => "text", "content" => "This is a test message"}
         ],
         "type" => "default",
+        "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
         "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
       } 
@@ -524,6 +555,7 @@ def test_menu()
           {"type" => "text", "content" => "This is a test follow"}
         ],
         "type" => "notif",
+        "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
         "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
       } 
@@ -542,6 +574,7 @@ def test_menu()
           {"type" => "text", "content" => "This is a test sub"}
         ],
         "type" => "subscribe",
+        "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
         "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
       } 
@@ -560,6 +593,7 @@ def test_menu()
           {"type" => "text", "content" => "This is a test sub"}
         ],
         "type" => "raid",
+        "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
         "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
       } 
@@ -578,6 +612,7 @@ def test_menu()
           {"type" => "text", "content" => "This is a test bits"}
         ],
         "type" => "cheer",
+        "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
         "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
       } 
