@@ -172,7 +172,7 @@ def treat_twitch_commands(data)
         msg = createMSG("twitch", "avatar", msg)
         sendToBus(msg)
       when "!discord"
-        send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
+        # send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
         send_twitch_message("venorrak", "You can see me talking on prod's discord server: https://discord.gg/JzPgeMp3EV or on Jake's discord server: https://discord.gg/MRjMmxQ6Wb")
       when "!commands"
         send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !JoelCommands")
@@ -287,8 +287,7 @@ def messageReceived(receivedData)
         end
       end
       pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", calculateLoreScore(receivedData).round(2))
-      data["profile_image_url"] = pfp_url
+      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", receivedData["payload"]["event"]["badges"], pfp_url, calculateLoreScore(receivedData).round(2))
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
       treatJoels(receivedData)
@@ -459,13 +458,15 @@ def createMSG(from, to, data)
   }
 end
 
-def createMSGTwitch(name, name_color, message, type, loreScore = 0)
+def createMSGTwitch(name, name_color, message, type, badges, pfp, loreScore = 0)
   return {
     "name": name,
     "name_color": name_color,
     "message": message,
     "type": type,
-    "lore_score": loreScore
+    "lore_score": loreScore,
+    "profile_image_url": pfp,
+    "badges": badges
   }
 end
 
