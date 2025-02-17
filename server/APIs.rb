@@ -262,7 +262,7 @@ def messageReceived(receivedData)
           "content": "#{receivedData["payload"]["event"]["user_name"]} has followed"
         }
       ]
-      data = createMSGTwitch("Follow", "#ffd000", message, "notif")
+      data = createMSGTwitch("Follow", "#ffd000", message, "notif", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
       updateLastFollower()
@@ -287,7 +287,7 @@ def messageReceived(receivedData)
         end
       end
       pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", receivedData["payload"]["event"]["badges"], pfp_url, calculateLoreScore(receivedData).round(2))
+      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", receivedData["payload"]["event"]["badges"], pfp_url, calculateLoreScore(receivedData).round(2), receivedData["payload"]["event"]["message"]["text"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
       treatJoels(receivedData)
@@ -300,7 +300,7 @@ def messageReceived(receivedData)
           "content": "ads playing for #{receivedData["payload"]["event"]["duration_seconds"]} seconds"
         }
       ]
-      data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif")
+      data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
     when "channel.subscribe"
@@ -311,7 +311,7 @@ def messageReceived(receivedData)
             "content": "#{receivedData["payload"]["event"]["user_name"]} has subscribed"
           }
         ]
-        data = createMSGTwitch("Subscribe", "00ff00", message, "subscribe")
+        data = createMSGTwitch("Subscribe", "00ff00", message, "subscribe", [], "", 0, message[0]["content"])
         msg = createMSG("twitch", "chat", data)
         sendToBus(msg)
       end
@@ -327,7 +327,7 @@ def messageReceived(receivedData)
           "content": "anonymous has gifted #{receivedData["payload"]["event"]["total"]} subs"
         }]
       end
-      data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe")
+      data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
     when "channel.subscription.message"
@@ -335,7 +335,7 @@ def messageReceived(receivedData)
         "type": "text",
         "content": "#{receivedData["payload"]["event"]["user_name"]} has resubscribed :\n #{receivedData["payload"]["event"]["message"]["text"]}"
       }]
-      data = createMSGTwitch("Resub", "#00ff00", message, "subscribe")
+      data = createMSGTwitch("Resub", "#00ff00", message, "subscribe", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
     when "channel.cheer"
@@ -350,7 +350,7 @@ def messageReceived(receivedData)
           "content": "anonymous has cheered #{receivedData["payload"]["event"]["bits"]} bits"
         }]
       end
-      data = createMSGTwitch("Cheers", "#e100ff", message, "cheer")
+      data = createMSGTwitch("Cheers", "#e100ff", message, "cheer", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
     when "channel.raid"
@@ -358,7 +358,7 @@ def messageReceived(receivedData)
         "type": "text",
         "content": "#{receivedData["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{receivedData["payload"]["event"]["viewers"]} viewers !"
       }]
-      data = createMSGTwitch("Raid", "#00ccff", message, "raid")
+      data = createMSGTwitch("Raid", "#00ccff", message, "raid", [], "", 0, message[0]["content"])
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
     end
@@ -458,7 +458,7 @@ def createMSG(from, to, data)
   }
 end
 
-def createMSGTwitch(name, name_color, message, type, badges, pfp, loreScore = 0)
+def createMSGTwitch(name, name_color, message, type, badges = [], pfp = "", loreScore = 0, rawMessage = "")
   return {
     "name": name,
     "name_color": name_color,
@@ -466,7 +466,8 @@ def createMSGTwitch(name, name_color, message, type, badges, pfp, loreScore = 0)
     "type": type,
     "lore_score": loreScore,
     "profile_image_url": pfp,
-    "badges": badges
+    "badges": badges,
+    "raw_message": rawMessage
   }
 end
 
