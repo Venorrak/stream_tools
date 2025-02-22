@@ -141,55 +141,11 @@ def treat_twitch_commands(data)
     if first_frag["type"] == "text"
       words = first_frag["text"].strip.split(" ")
       case words[0].downcase
-      when "!color"
-          color = words[1]
-          if color != nil
-            if color.match?(/^#[0-9A-F]{6}$/i)
-              color = color.delete_prefix("#")
-              msg = {
-                'command': 'change_color',
-                'params': {},
-                'data': color
-              }
-              msg = createMSG("twitch", "avatar", msg)
-              sendToBus(msg)
-            end
-          end
-      when "!rainbow"
-        msg = {
-          'command': 'rainbow_on_off',
-          'params': {},
-          'data': {}
-        }
-        msg = createMSG("twitch", "avatar", msg)
-        sendToBus(msg)
-      when "!dum"
-        msg = {
-          'command': 'dum_on_off',
-          'params': {},
-          'data': {}
-        }
-        msg = createMSG("twitch", "avatar", msg)
-        sendToBus(msg)
-      when "!discord"
-        # send_twitch_message("venorrak", "Join the discord server: https://discord.gg/ydJ7NCc8XM")
-        send_twitch_message("venorrak", "You can see me talking on prod's discord server: https://discord.gg/JzPgeMp3EV or on Jake's discord server: https://discord.gg/MRjMmxQ6Wb")
-      when "!commands"
-        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !JoelCommands")
-      when "!c"
-        send_twitch_message("venorrak", "Commands: !discord, !color #ffffff, !rainbow, !dum, !song, !JoelCommands")
       when "!song"
         playback = getSpotidyPlaybackState()
         music_link = playback["item"]["external_urls"]["spotify"]
         playlist_link = playback["context"]["external_urls"]["spotify"]
         send_twitch_message("venorrak", "Currently playing: #{music_link}. Listen to the playlist here: #{playlist_link}")
-
-        msg = {
-          "type": "show"
-        }
-        msg = createMSG("twitch", "spotifyOverlay", msg)
-        sendToBus(msg)
-        $spotify_update_counter = 11
       when "!lore"
         if words[1] != nil
           lore = $sqlGetLore.execute(words[1]).first
@@ -656,8 +612,16 @@ EM.run do
     rescue
       data = event.data
     end
-    if data["to"] == "BUS" && data["from"] == "BUS" && data["payload"] == "New client connected"
-      updateLastFollower()
+    if data["to"] == "BUS"
+      if data["from"] == "BUS" && data["payload"] == "New client connected"
+        updateLastFollower()
+      end
+      if data["from"] == "avatar"
+        case data["payload"]["action"]
+        when "sendMessage"
+          send_twitch_message("venorrak", data["payload"]["content"])
+        end
+      end
     end
 
     if data["to"] == "all" && data["from"] == "BUS"
