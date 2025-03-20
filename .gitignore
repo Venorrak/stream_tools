@@ -26,3 +26,4 @@ outils/chat/sounds/yay.mp3:Zone.Identifier
 outils/chat/7tv/
 outils/chat/emotes.json
 other/.env
+utils/secret.rb
