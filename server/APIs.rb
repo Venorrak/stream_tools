@@ -403,6 +403,19 @@ def updateSpotifyOverlay()
   end
 end
 
+def changePlaylist(id)
+  begin
+    body = {
+      "context_uri": "spotify:playlist:#{id}"
+    }.to_json
+    response = $spotify_api_server.put("/v1/me/player/play", body) do |req|
+      req.headers["Authorization"] = "Bearer #{$spotify_token}"
+    end
+  rescue
+    return nil
+  end
+end
+
 ##### UTILS #####
 
 def createMSG(from, to, data)
@@ -620,6 +633,8 @@ EM.run do
         case data["payload"]["action"]
         when "sendMessage"
           send_twitch_message("venorrak", data["payload"]["content"])
+        when "changePlaylist"
+          changePlaylist(data["payload"]["content"])
         end
       end
     end
