@@ -157,6 +157,13 @@ def treat_twitch_commands(data)
         else
           send_twitch_message("venorrak", "No word specified")
         end
+      when "!guystats"
+        guy = sendQuery("GetGuy", [data["payload"]["event"]["chatter_user_login"]])
+        if guy.nil?
+          send_twitch_message("venorrak", "No stats for #{data["payload"]["event"]["chatter_user_login"]} guy")
+        else
+          send_twitch_message("venorrak", "#{data["payload"]["event"]["chatter_user_login"]}'s guy cought #{guy["joel_count"]} Joels")
+        end
       end
   end
 end
@@ -247,6 +254,7 @@ def messageReceived(receivedData)
       msg = createMSG("twitch", "chat", data)
       sendToBus(msg)
       treatJoels(receivedData)
+      treatGuy(receivedData)
       treatForLore(receivedData)
       treat_twitch_commands(receivedData)
     when "channel.ad_break.begin"
@@ -509,6 +517,16 @@ def treatJoels(data)
     }
     msg = createMSG("twitch", "avatar", msg)
     sendToBus(msg)
+  end
+end
+
+def treatGuy(data)
+  message = data["payload"]["event"]["message"]["text"]
+  words = message.split(" ")
+  if words[0] == "!guy"
+    if sendQuery("GetGuy", [data["payload"]["event"]["chatter_user_login"]]).nil?
+      sendQuery("NewGuy", [data["payload"]["event"]["chatter_user_login"]])
+    end
   end
 end
 

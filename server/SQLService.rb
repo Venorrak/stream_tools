@@ -28,6 +28,9 @@ $StreamNewLore = $StreamDB.prepare("INSERT INTO lore (word, count) VALUES (?, 1)
 $StreamUpdateLore = $StreamDB.prepare("UPDATE lore SET count = count + 1 WHERE word = ?;")
 $StreamGetLore = $StreamDB.prepare("SELECT * FROM lore WHERE word = ?;")
 $StreamGetHighestLore = $StreamDB.prepare("SELECT word, count FROM lore ORDER BY count DESC LIMIT 1;")
+$StreamGetGuy = $StreamDB.prepare("SELECT * FROM guys WHERE user_id = (SELECT id FROM users WHERE name = ?);")
+$StreamNewGuy = $StreamDB.prepare("INSERT INTO guys VALUES (DEFAULT, 0, (SELECT id FROM users WHERE name = ?));")
+$StreamIncrementGuyJoel = $StreamDB.prepare("UPDATE guys SET joel_count = joel_count + 1 WHERE user_id = (SELECT id FROM users WHERE name = ?);")
 
 $JoelGetTotalJoelCountLastStream = $JoelDB.prepare("SELECT count FROM streamJoels WHERE channel_id = (SELECT id FROM channels WHERE name = ?) ORDER BY streamDate DESC LIMIT 1;") 
 $JoelGetJCPlongAll = $JoelDB.prepare("SELECT * FROM JCPlong;")
@@ -113,6 +116,9 @@ $StreamRequestRefrenceList = {
   "UpdateLore" => :StreamUpdateLore,
   "GetLore" => :StreamGetLore,
   "GetHighestLore" => :StreamGetHighestLore,
+  "GetGuy" => :StreamGetGuy,
+  "NewGuy" => :StreamNewGuy,
+  "IncrementGuyJoel" => :StreamIncrementGuyJoel,
 }
 
 # FUNCTIONS
@@ -159,7 +165,17 @@ def StreamGetHighestLore()
   return $StreamGetHighestLore.execute().first
 end
 
+def StreamGetGuy(name)
+  return $StreamGetGuy.execute(name).first
+end
 
+def StreamNewGuy(name)
+  return $StreamNewGuy.execute(name)
+end
+
+def StreamIncrementGuyJoel(name)
+  return $StreamIncrementGuyJoel.execute(name)
+end
 
 # JOEL
 
@@ -307,17 +323,21 @@ set :bind, '0.0.0.0'
 post '/stream/:requestName' do
   requestBody = JSON.parse(request.body.read)
   requestLink = $StreamRequestRefrenceList[params[:requestName]]
+  requestId = request.env['HTTP_REQUEST_ID'] || ""
   if requestLink.nil?
     return [
       404,
-      {},
+      {"Request-Id" => requestId},
       "Request not found"
     ]
   end
   begin
     return [
       200,
-      {"content-type" => "application/json"},
+      {
+        "content-type" => "application/json",
+        "Request-Id" => requestId
+      },
       send(requestLink, *requestBody).to_json
     ]
   rescue Mysql2::Error::ConnectionError => e
@@ -325,14 +345,14 @@ post '/stream/:requestName' do
     restartSQLConnection()
     return [
       500,
-      {},
+      {"Request-Id" => requestId},
       "Lost connection to MySQL server during query"
     ]
   rescue => e
     p e
     return [
       400,
-      {},
+      {"Request-Id" => requestId},
       "wrong number of arguments"
     ]
   end
@@ -341,17 +361,21 @@ end
 post '/joel/:requestName' do
   requestBody = JSON.parse(request.body.read)
   requestLink = $JoelRequestRefrenceList[params[:requestName]]
+  requestId = request.env['HTTP_REQUEST_ID'] || ""
   if requestLink.nil?
     return [
       404,
-      {},
+      {"Request-Id" => requestId},
       "Request not found"
     ]
   end
   begin
     return [
       200,
-      {"content-type" => "application/json"},
+      {
+        "content-type" => "application/json",
+        "Request-Id" => requestId
+      },
       send(requestLink, *requestBody).to_json
     ]
   rescue Mysql2::Error::ConnectionError => e
@@ -359,14 +383,14 @@ post '/joel/:requestName' do
     restartSQLConnection()
     return [
       500,
-      {},
+      {"Request-Id" => requestId},
       "Lost connection to MySQL server during query"
     ]
   rescue => e
     p e
     return [
       400,
-      {},
+      {"Request-Id" => requestId},
       "wrong number of arguments"
     ]
   end
