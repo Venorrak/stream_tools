@@ -538,7 +538,8 @@ def test_menu()
         "type" => "default",
         "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
-        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png",
+        "raw_message": "This is a test message"
       } 
     }
     $bus.send(msg.to_json)
@@ -557,7 +558,8 @@ def test_menu()
         "type" => "notif",
         "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
-        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png",
+        "raw_message": "This is a test follow"
       } 
     }
     $bus.send(msg.to_json)
@@ -576,7 +578,8 @@ def test_menu()
         "type" => "subscribe",
         "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
-        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png",
+        "raw_message": "This is a test sub"
       } 
     }
     $bus.send(msg.to_json)
@@ -590,12 +593,13 @@ def test_menu()
       {
         "name" => "RAID",
         "message": [
-          {"type" => "text", "content" => "This is a test sub"}
+          {"type" => "text", "content" => "This is a test raid"}
         ],
         "type" => "raid",
         "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
-        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png",
+        "raw_message": "This is a test raid"
       } 
     }
     $bus.send(msg.to_json)
@@ -614,7 +618,8 @@ def test_menu()
         "type" => "cheer",
         "lore_score" => 0.0,
         "name_color" => "#FFFFFF",
-        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png"
+        "profile_image_url" => "https://server.venorrak.dev/pictures/LOGO.png",
+        "raw_message": "This is a test bits"
       } 
     }
     $bus.send(msg.to_json)
