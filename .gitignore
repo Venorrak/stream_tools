@@ -27,3 +27,4 @@ outils/chat/7tv/
 outils/chat/emotes.json
 other/.env
 cam/temp_frame.jpg
+utils/secret.rb
