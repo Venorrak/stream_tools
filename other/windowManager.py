@@ -7,7 +7,7 @@ import time
 import os
 from dotenv import load_dotenv
 
-host = "192.168.0.25"
+host = "127.0.0.1"
 port = 4455
 load_dotenv()
 password = os.getenv("PASSWORD")
@@ -23,17 +23,22 @@ def updateWindows():
         parts = source.split(":")
         exe = parts[2]
         name = parts[0]
-        nameChanged = True if obsWindow["name"] != name and obsWindow["exe"] != exe else False
+        if "#3A" in name:
+            name = name.replace("#3A", ":")
+        nameChanged = True if obsWindow["name"] != name or obsWindow["exe"] != exe else False
         obsWindow["name"] = name
         obsWindow["exe"] = exe
         
         if nameChanged:
+            print(name)
             window_handle = FindWindow(None, name)
         else:
             window_handle = obsWindow["hwnd"]
+        
         try:
             window_rect = GetWindowRect(window_handle)
         except:
+            # exit()
             obsWindow["hwnd"] = None
             continue
         
