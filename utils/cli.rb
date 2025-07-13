@@ -803,7 +803,7 @@ end
 
 Thread.start do
   EM.run do
-    bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
+    bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5000')
 
     bus.on :open do |event|
       p [:open, "BUS"]
