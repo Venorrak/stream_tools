@@ -9,21 +9,10 @@ $WsClients = []
 
 ##### UTILS #####
 
-def createMSG(from, to, data)
+def createMSG(subject, payload)
   return {
-    "from": from,
-    "to": to,
-    "time": "#{Time.now().to_s.split(" ")[1]}",
-    "payload": data
-  }
-end
-
-def createMSGTwitch(name, name_color, message, type)
-  return {
-    "name": name,
-    "name_color": name_color,
-    "message": message,
-    "type": type
+    "subject": subject.join("."),
+    "payload": payload
   }
 end
 
@@ -44,15 +33,15 @@ def printBus(msg)
     p msg
     return
   end
-  puts "#{msg["time"] || Time.now().to_s.split(" ")[1]} - #{msg["from"]} to #{msg["to"]} : #{msg["payload"]}"
+  puts "#{Time.now().to_s.split(" ")[1]} - #{msg["subject"]} : #{msg["payload"]}"
 end
 
 
 EM.run do
-  WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5963) do |ws|
+  WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5000) do |ws|
     ws.onopen do
       $WsClients.push(ws)
-      sendToAllClients(createMSG("BUS", "BUS", "New client connected"))
+      sendToAllClients(createMSG(["BUS"], {"message": "New client connected"}))
     end
 
     ws.onmessage do |msg|

@@ -136,68 +136,30 @@ def send_twitch_message(channel, message)
   end
 end
 
+def send_twitch_shoutout(channel_id)
+  begin
+    response = $APItwitch.post("/helix/chat/shoutouts?from_broadcaster_id=#{$me_twitch_id}&to_broadcast_id=#{channel_id}&moderator_id=#{$me_twitch_id}") do |req|
+      req.headers["Authorization"] = "Bearer #{$twitch_token}"
+      req.headers["Client-Id"] = $twitch_bot_id
+  end
+  p response.status
+  rescue
+    p "error sending shoutout"
+  end
+end
+
 def treat_twitch_commands(data)
   first_frag = data["payload"]["event"]["message"]["fragments"][0]
-    if first_frag["type"] == "text"
-      words = first_frag["text"].strip.split(" ")
-      case words[0].downcase
-      when "!song"
-        playback = getSpotidyPlaybackState()
-        music_link = playback["item"]["external_urls"]["spotify"]
-        playlist_link = playback["context"]["external_urls"]["spotify"]
-        send_twitch_message("venorrak", "Currently playing: #{music_link}. Listen to the playlist here: #{playlist_link}")
-      when "!lore"
-        if words[1] != nil
-          lore = $sqlGetLore.execute(words[1]).first
-          if lore.nil?
-            send_twitch_message("venorrak", "No lore for this word")
-          else
-            send_twitch_message("venorrak", "Lore for #{words[1]}: #{lore["count"]}")
-          end
-        else
-          send_twitch_message("venorrak", "No word specified")
-        end
-      when "!guystats"
-        guy = sendQuery("GetGuy", [data["payload"]["event"]["chatter_user_login"]])
-        if guy.nil?
-          send_twitch_message("venorrak", "No stats for #{data["payload"]["event"]["chatter_user_login"]} guy")
-        else
-          send_twitch_message("venorrak", "#{data["payload"]["event"]["chatter_user_login"]}'s guy cought #{guy["joel_count"]} Joels")
-        end
-      end
-  end
-end
-
-def treatForLore(messageData)
-  textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
-  words = textContent.split(" ")
-  words.each do |word|
-    sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
-    lore = sendQuery("GetLore", [sanitizedWord])
-    if lore.nil?
-      sendQuery("NewLore", [sanitizedWord])
-    else
-      sendQuery("UpdateLore", [sanitizedWord])
+  if first_frag["type"] == "text"
+    words = first_frag["text"].strip.split(" ")
+    case words[0].downcase
+    when "!song"
+      playback = getSpotidyPlaybackState()
+      music_link = playback["item"]["external_urls"]["spotify"]
+      playlist_link = playback["context"]["external_urls"]["spotify"]
+      send_twitch_message("venorrak", "Currently playing: #{music_link}. Listen to the playlist here: #{playlist_link}")
     end
   end
-end
-
-def calculateLoreScore(messageData)
-  textContent = messageData["payload"]["event"]["message"]["text"].strip.downcase
-  highestScore = sendQuery("GetHighestLore", [])["count"]
-  words = textContent.split(" ")
-  score = 0
-  words.each do |word|
-    sanitizedWord = RemoveEmoji::Sanitize.call(word).delete_suffix("\u{E0000}")
-    if sanitizedWord != ""
-      lore = sendQuery("GetLore", [sanitizedWord])
-    end
-    if !lore.nil?
-      score += lore["count"].to_f / highestScore.to_f
-    end
-  end
-  score = score / words.length.to_f
-  return score
 end
 
 def messageReceived(receivedData)
@@ -219,16 +181,10 @@ def messageReceived(receivedData)
   if receivedData["metadata"]["message_type"] == "notification"
     case receivedData["payload"]["subscription"]["type"]
     when "channel.follow"
-      message = [
-        {
-          "type": "text",
-          "content": "#{receivedData["payload"]["event"]["user_name"]} has followed"
-        }
-      ]
-      data = createMSGTwitch("Follow", "#ffd000", message, "notif", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "follow"], {
+        "name": receivedData["payload"]["event"]["user_name"],
+      })
       sendToBus(msg)
-      updateLastFollower()
     when "channel.chat.message"
       message = []
       receivedData["payload"]["event"]["message"]["fragments"].each do |frag|
@@ -250,80 +206,54 @@ def messageReceived(receivedData)
         end
       end
       pfp_url = getTwitchUserPFP(receivedData["payload"]["event"]["chatter_user_login"])
-      data = createMSGTwitch(receivedData["payload"]["event"]["chatter_user_name"], receivedData["payload"]["event"]["color"], message, "default", receivedData["payload"]["event"]["badges"], pfp_url, calculateLoreScore(receivedData).round(2), receivedData["payload"]["event"]["message"]["text"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "message"], {
+        "name": receivedData["payload"]["event"]["chatter_user_name"],
+        "name_color": receivedData["payload"]["event"]["color"],
+        "message": message,
+        "pfp": pfp_url,
+        "badges": receivedData["payload"]["event"]["badges"],
+        "raw_message": receivedData["payload"]["event"]["message"]["text"],
+      })
       sendToBus(msg)
-      treatJoels(receivedData)
-      treatGuy(receivedData)
-      treatForLore(receivedData)
       treat_twitch_commands(receivedData)
     when "channel.ad_break.begin"
-      message = [
-        {
-          "type": "text",
-          "content": "ads playing for #{receivedData["payload"]["event"]["duration_seconds"]} seconds"
-        }
-      ]
-      data = createMSGTwitch("Ad Break", "#ffd000", message, "negatif", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "ads", "begin"], {
+        "duration": receivedData["payload"]["event"]["duration_seconds"],
+      })
       sendToBus(msg)
     when "channel.subscribe"
       if receivedData["payload"]["event"]["is_gift"] == false
-        message = [
-          {
-            "type": "text",
-            "content": "#{receivedData["payload"]["event"]["user_name"]} has subscribed"
-          }
-        ]
-        data = createMSGTwitch("Subscribe", "00ff00", message, "subscribe", [], "", 0, message[0]["content"])
-        msg = createMSG("twitch", "chat", data)
+        msg = createMSG(["twitch", "sub"], {
+          "name": receivedData["payload"]["event"]["user_name"],
+        })
         sendToBus(msg)
       end
     when "channel.subscription.gift"
-      if receivedData["payload"]["event"]["is_anonymous"] == false
-        message = [{
-          "type": "text",
-          "content": "#{receivedData["payload"]["event"]["gifter_name"]} has gifted #{receivedData["payload"]["event"]["total"]} subs"
-        }]
-      else
-        message = [{
-          "type": "text",
-          "content": "anonymous has gifted #{receivedData["payload"]["event"]["total"]} subs"
-        }]
-      end
-      data = createMSGTwitch("Gift Sub", "#00ff00", message, "subscribe", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "sub", "gift"], {
+        "name": receivedData["payload"]["event"]["gifter_name"],
+        "count": receivedData["payload"]["event"]["total"],
+        "anonymous": receivedData["payload"]["event"]["is_anonymous"],
+      })
       sendToBus(msg)
     when "channel.subscription.message"
-      message = [{
-        "type": "text",
-        "content": "#{receivedData["payload"]["event"]["user_name"]} has resubscribed :\n #{receivedData["payload"]["event"]["message"]["text"]}"
-      }]
-      data = createMSGTwitch("Resub", "#00ff00", message, "subscribe", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "sub", "resub"], {
+        "name": receivedData["payload"]["event"]["user_name"],
+        "message": receivedData["payload"]["event"]["message"]["text"],
+      })
       sendToBus(msg)
     when "channel.cheer"
-      if receivedData["payload"]["event"]["is_anonymous"] == false
-        message = [{
-          "type": "text",
-          "content": "#{receivedData["payload"]["event"]["user_name"]} has cheered #{receivedData["payload"]["event"]["bits"]} bits"
-        }]
-      else
-        message = [{
-          "type": "text",
-          "content": "anonymous has cheered #{receivedData["payload"]["event"]["bits"]} bits"
-        }]
-      end
-      data = createMSGTwitch("Cheers", "#e100ff", message, "cheer", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "cheer"], {
+        "name": receivedData["payload"]["event"]["user_name"],
+        "count": receivedData["payload"]["event"]["bits"],
+        "anonymous": receivedData["payload"]["event"]["is_anonymous"],
+      })
       sendToBus(msg)
     when "channel.raid"
-      message = [{
-        "type": "text",
-        "content": "#{receivedData["payload"]["event"]["from_broadcaster_user_name"]} has raided with #{receivedData["payload"]["event"]["viewers"]} viewers !"
-      }]
-      data = createMSGTwitch("Raid", "#00ccff", message, "raid", [], "", 0, message[0]["content"])
-      msg = createMSG("twitch", "chat", data)
+      msg = createMSG(["twitch", "raid"], {
+        "name": receivedData["payload"]["event"]["from_broadcaster_user_name"],
+        "count": receivedData["payload"]["event"]["viewers"],
+      })
+      send_twitch_shoutout(receivedData["payload"]["event"]["from_broadcaster_user_id"])
       sendToBus(msg)
     end
   end
@@ -385,28 +315,13 @@ def updateSpotifyOverlay()
       rescue
         music_image = ""
       end
-      msg = {
-        "type": "song",
-        "name": music_name,
+      msg = createMSG(["spotify", "song", "start"], {
+        "title": music_name,
         "artist": music_artist,
         "image": music_image,
-        "progress_ms": playback["progress_ms"],
-        "duration_ms": playback["item"]["duration_ms"]
-      }
-      msg = createMSG("spotify", "spotifyOverlay", msg)
+        "duration_ms": playback["item"]["duration_ms"],
+      })
       sendToBus(msg)
-      $spotify_update_counter = 11
-    else
-      if $spotify_update_counter > 0
-        $spotify_update_counter -= 1
-        msg = {
-          "type": "progress",
-          "progress_ms": playback["progress_ms"],
-          "duration_ms": playback["item"]["duration_ms"]
-        }
-        msg = createMSG("spotify", "spotifyOverlay", msg)
-        sendToBus(msg)
-      end
     end
   end
 end
@@ -426,25 +341,10 @@ end
 
 ##### UTILS #####
 
-def createMSG(from, to, data)
+def createMSG(subject, payload)
   return {
-    "from": from,
-    "to": to,
-    "time": "#{Time.now().to_s.split(" ")[1]}",
-    "payload": data
-  }
-end
-
-def createMSGTwitch(name, name_color, message, type, badges = [], pfp = "", loreScore = 0, rawMessage = "")
-  return {
-    "name": name,
-    "name_color": name_color,
-    "message": message,
-    "type": type,
-    "lore_score": loreScore,
-    "profile_image_url": pfp,
-    "badges": badges,
-    "raw_message": rawMessage
+    "subject": subject.join("."),
+    "payload": payload
   }
 end
 
@@ -474,59 +374,6 @@ def sendQuery(queryName, body)
     end
   rescue
     return {}
-  end
-end
-
-##### GODOT #####
-
-def updateLastFollower()
-  channel_id = getTwitchUserId("venorrak")
-  response = $APItwitch.get("/helix/channels/followers?broadcaster_id=#{channel_id}") do |req|
-      req.headers["Authorization"] = "Bearer #{$twitch_token}"
-      req.headers["Client-Id"] = $twitch_bot_id
-  end
-  payload = JSON.parse(response.body)
-  lastFollower = payload["data"][0]
-  msg = {
-    'command': 'last_follow_update',
-    'params': {},
-    'data': {
-      "name": lastFollower["user_name"]
-    }
-  }
-  msg = createMSG("twitch", "avatar", msg)
-  sendToBus(msg)
-end
-
-def treatJoels(data)
-  message = data["payload"]["event"]["message"]["text"]
-  words = message.split(" ")
-  nbJoelInMessage = 0
-  words.each do |word|
-    if $acceptedJoels.include?(word)
-      nbJoelInMessage += 1
-    end
-  end
-  if nbJoelInMessage > 0
-    msg = {
-      'command': 'Joel_Sent',
-      'params': {
-        "size": nbJoelInMessage
-      },
-      'data': {}
-    }
-    msg = createMSG("twitch", "avatar", msg)
-    sendToBus(msg)
-  end
-end
-
-def treatGuy(data)
-  message = data["payload"]["event"]["message"]["text"]
-  words = message.split(" ")
-  if words[0] == "!guy"
-    if sendQuery("GetGuy", [data["payload"]["event"]["chatter_user_login"]]).nil?
-      sendQuery("NewGuy", [data["payload"]["event"]["chatter_user_login"]])
-    end
   end
 end
 
@@ -630,7 +477,7 @@ Thread.start do
 end
 
 EM.run do
-  bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5963')
+  bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5000')
 
   bus.on :open do |event|
     p [:open, "BUS"]
@@ -643,30 +490,27 @@ EM.run do
     rescue
       data = event.data
     end
-    if data["to"] == "BUS"
-      if data["from"] == "BUS" && data["payload"] == "New client connected"
-        updateLastFollower()
-      end
-      if data["from"] == "avatar"
-        case data["payload"]["action"]
+    keywords = data["subject"].split(".")
+    case keywords[0]
+      when "command"
+        case keywords[1]
         when "sendMessage"
           send_twitch_message("venorrak", data["payload"]["content"])
         when "changePlaylist"
           changePlaylist(data["payload"]["content"])
         end
-      end
-    end
-
-    if data["to"] == "all" && data["from"] == "BUS"
-      if data["payload"]["type"] == "token_refreshed"
-        case data["payload"]["client"]
+      when "token"
+        case keywords[1]
         when "twitch"
-          getTwitchToken()
+          if data["payload"]["status"] == "refreshed"
+            getTwitchToken()
+          end
         when "spotify"
-          getSpotifyToken()
+          if data["payload"]["status"] == "refreshed"
+            getSpotifyToken()
+          end
         end
       end
-    end
   end
 
   bus.on :error do |event|

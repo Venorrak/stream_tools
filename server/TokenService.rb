@@ -123,9 +123,8 @@ def refreshTwitchAccess()
   if !rep["access_token"].nil? && !rep["refresh_token"].nil?
     $twitch_token = rep["access_token"]
     $twitch_refresh_token = rep["refresh_token"]
-    msg = createMSG("BUS", "all", {
-      "type": "token_refreshed",
-      "client": "twitch"
+    msg = createMSG(["token", "twitch"], {
+      "status": "refreshed",
     })
     sendToBus(msg)
   else
@@ -156,9 +155,8 @@ def refreshSpotifyAccess()
     rep = JSON.parse(response.body)
     if !rep['access_token'].nil?
       $spotify_token = rep['access_token']
-      msg = createMSG("BUS", "all", {
-        "type": "token_refreshed",
-        "client": "spotify"
+      msg = createMSG(["token", "spotify"], {
+        "status": "refreshed",
       })
       sendToBus(msg)
     else
@@ -201,12 +199,10 @@ def get_spotify_token(code)
   end
 end
 
-def createMSG(from, to, data)
+def createMSG(subject, payload)
   return {
-    "from": from,
-    "to": to,
-    "time": "#{Time.now().to_s.split(" ")[1]}",
-    "payload": data
+    "subject": subject.join("."),
+    "payload": payload
   }
 end
 
@@ -248,7 +244,7 @@ end
 
 Thread.start do
   EM.run do
-    bus = Faye::WebSocket::Client.new("ws://192.168.0.16:5963")
+    bus = Faye::WebSocket::Client.new("ws://192.168.0.16:5000")
 
     bus.on :open do |event|
       $bus = bus
