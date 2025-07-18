@@ -234,7 +234,8 @@ end
 
 set :port, 5001
 set :bind, '0.0.0.0'
-disable :protection # Disable CSRF protection for simplicity
+set :host_authorization, { permitted_hosts: [] }
+
 
 
 post '/joel/:requestName' do
