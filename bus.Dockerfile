@@ -32,4 +32,4 @@ RUN gem update && gem install bundler \
 
 EXPOSE 5000
 
-CMD ["ruby", "/home/dev/stream_tools/server/BUS.rb"]
+CMD ["bash", "-c", "ruby", "/home/dev/stream_tools/server/BUS.rb  2>&1 | tee /home/dev/logs/bus_service.log"]

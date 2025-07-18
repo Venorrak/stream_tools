@@ -33,4 +33,4 @@ RUN gem update && gem install bundler \
     absolute_time \
     remove_emoji
 
-CMD ["ruby", "/home/dev/stream_tools/server/APIs.rb"]
+CMD ["bash", "-c", "ruby", "/home/dev/stream_tools/server/APIs.rb  2>&1 | tee /home/dev/logs/api_service.log"]
