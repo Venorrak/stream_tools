@@ -13,24 +13,9 @@ end
 
 require 'mysql2'
 
-$JoelDB = Mysql2::Client.new(:host => "localhost", :username => "bot", :password => "joel", :reconnect => true, :database => "joelScan", idle_timeout: 0)
-$StreamDB = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234", :reconnect => true, :database => "stream", idle_timeout: 0)
+$JoelDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "joelScan", idle_timeout: 0, port: 3306)
 
 # PREPARED STATEMENTS
-
-$StreamNewUser = $StreamDB.prepare("INSERT INTO users (name, twitch_id) VALUES (?, ?);")
-$StreamNewPoints = $StreamDB.prepare("INSERT INTO points (user_id, points) VALUES (?, 0);")
-$StreamGetUser = $StreamDB.prepare("SELECT * FROM users WHERE twitch_id = ?;")
-$StreamAddPoints = $StreamDB.prepare("UPDATE points SET points = points + ? WHERE user_id = ?;")
-$StreamRemovePoints = $StreamDB.prepare("UPDATE points SET points = points - ? WHERE user_id = ?;")
-$StreamGetPoints = $StreamDB.prepare("SELECT * FROM points WHERE user_id = ?;")
-$StreamNewLore = $StreamDB.prepare("INSERT INTO lore (word, count) VALUES (?, 1);")
-$StreamUpdateLore = $StreamDB.prepare("UPDATE lore SET count = count + 1 WHERE word = ?;")
-$StreamGetLore = $StreamDB.prepare("SELECT * FROM lore WHERE word = ?;")
-$StreamGetHighestLore = $StreamDB.prepare("SELECT word, count FROM lore ORDER BY count DESC LIMIT 1;")
-$StreamGetGuy = $StreamDB.prepare("SELECT * FROM guys WHERE user_id = (SELECT id FROM users WHERE name = ?);")
-$StreamNewGuy = $StreamDB.prepare("INSERT INTO guys VALUES (DEFAULT, 0, (SELECT id FROM users WHERE name = ?));")
-$StreamIncrementGuyJoel = $StreamDB.prepare("UPDATE guys SET joel_count = joel_count + 1 WHERE user_id = (SELECT id FROM users WHERE name = ?);")
 
 $JoelGetTotalJoelCountLastStream = $JoelDB.prepare("SELECT count FROM streamJoels WHERE channel_id = (SELECT id FROM channels WHERE name = ?) ORDER BY streamDate DESC LIMIT 1;") 
 $JoelGetJCPlongAll = $JoelDB.prepare("SELECT * FROM JCPlong;")
@@ -105,77 +90,7 @@ $JoelRequestRefrenceList = {
   "GetMostJoeledStreamerStats" => :JoelGetMostJoeledStreamerStats,
 }
 
-$StreamRequestRefrenceList = {
-  "NewUser" => :StreamNewUser,
-  "NewPoints" => :StreamNewPoints,
-  "GetUser" => :StreamGetUser,
-  "AddPoints" => :StreamAddPoints,
-  "RemovePoints" => :StreamRemovePoints,
-  "GetPoints" => :StreamGetPoints,
-  "NewLore" => :StreamNewLore,
-  "UpdateLore" => :StreamUpdateLore,
-  "GetLore" => :StreamGetLore,
-  "GetHighestLore" => :StreamGetHighestLore,
-  "GetGuy" => :StreamGetGuy,
-  "NewGuy" => :StreamNewGuy,
-  "IncrementGuyJoel" => :StreamIncrementGuyJoel,
-}
-
 # FUNCTIONS
-
-# STREAM
-
-def StreamNewUser(name, twitch_id)
-  return $StreamNewUser.execute(name, twitch_id)
-end
-
-def StreamNewPoints(user_id)
-  return $StreamNewPoints.execute(user_id)
-end
-
-def StreamGetUser(twitch_id)
-  return $StreamGetUser.execute(twitch_id).first
-end
-
-def StreamAddPoints(points, user_id)
-  return $StreamAddPoints.execute(points, user_id)
-end
-
-def StreamRemovePoints(points, user_id)
-  return $StreamRemovePoints.execute(points, user_id)
-end
-
-def StreamGetPoints(user_id)
-  return $StreamGetPoints.execute(user_id).first
-end
-
-def StreamNewLore(word)
-  return $StreamNewLore.execute(word)
-end
-
-def StreamUpdateLore(word)
-  return $StreamUpdateLore.execute(word)
-end
-
-def StreamGetLore(word)
-  return $StreamGetLore.execute(word).first
-end
-
-def StreamGetHighestLore()
-  return $StreamGetHighestLore.execute().first
-end
-
-def StreamGetGuy(name)
-  return $StreamGetGuy.execute(name).first
-end
-
-def StreamNewGuy(name)
-  return $StreamNewGuy.execute(name)
-end
-
-def StreamIncrementGuyJoel(name)
-  return $StreamIncrementGuyJoel.execute(name)
-end
 
 # JOEL
 
@@ -319,44 +234,8 @@ end
 
 set :port, 5001
 set :bind, '0.0.0.0'
+disable :protection # Disable CSRF protection for simplicity
 
-post '/stream/:requestName' do
-  requestBody = JSON.parse(request.body.read)
-  requestLink = $StreamRequestRefrenceList[params[:requestName]]
-  requestId = request.env['HTTP_REQUEST_ID'] || ""
-  if requestLink.nil?
-    return [
-      404,
-      {"Request-Id" => requestId},
-      "Request not found"
-    ]
-  end
-  begin
-    return [
-      200,
-      {
-        "content-type" => "application/json",
-        "Request-Id" => requestId
-      },
-      send(requestLink, *requestBody).to_json
-    ]
-  rescue Mysql2::Error::ConnectionError => e
-    p e
-    restartSQLConnection()
-    return [
-      500,
-      {"Request-Id" => requestId},
-      "Lost connection to MySQL server during query"
-    ]
-  rescue => e
-    p e
-    return [
-      400,
-      {"Request-Id" => requestId},
-      "wrong number of arguments"
-    ]
-  end
-end
 
 post '/joel/:requestName' do
   requestBody = JSON.parse(request.body.read)
@@ -400,6 +279,6 @@ def restartSQLConnection()
   $JoelDB.close
   $StreamDB.close
   exec("ruby SQLService.rb")
-  $JoelDB = Mysql2::Client.new(:host => "localhost", :username => "bot", :password => "joel", :reconnect => true, :database => "joelScan", idle_timeout: 0)
-  $StreamDB = Mysql2::Client.new(:host => "localhost", :username => "bus", :password => "1234", :reconnect => true, :database => "stream", idle_timeout: 0)
+  $JoelDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "joelScan", idle_timeout: 0, port: 3306)
+  $StreamDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "stream", idle_timeout: 0, port: 3306)
 end

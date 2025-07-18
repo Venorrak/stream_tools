@@ -37,6 +37,8 @@ end
 
 set :port, 5002
 set :bind, '0.0.0.0'
+disable :protection # Disable CSRF protection for simplicity
+set :host_authorization, { permitted_hosts: [] }
 
 get '/token/spotify' do
   if request.env['HTTP_AUTHORIZATION'] == $spotify_safety_string
@@ -244,7 +246,7 @@ end
 
 Thread.start do
   EM.run do
-    bus = Faye::WebSocket::Client.new("ws://192.168.0.16:5000")
+    bus = Faye::WebSocket::Client.new("ws://bus:5000")
 
     bus.on :open do |event|
       $bus = bus
