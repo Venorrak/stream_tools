@@ -172,7 +172,7 @@ def authorize_spotify()
   response = $spotify_auth_server.get("/authorize") do |req|
     req.params["client_id"] = $spotify_client_id
     req.params["response_type"] = "code"
-    req.params["redirect_uri"] = "http://192.168.0.16:5002/callback" #TODO: change 
+    req.params["redirect_uri"] = "http://192.168.1.16:5002/callback" #TODO: change 
     req.params["scope"] = "app-remote-control streaming user-read-playback-state user-modify-playback-state"  
     req.params["state"] = SecureRandom.alphanumeric(16)
   end
@@ -183,7 +183,7 @@ def get_spotify_token(code)
   body = {
     grant_type: "authorization_code",
     code: code,
-    redirect_uri: "http://192.168.0.16:5002/callback" #TODO: change
+    redirect_uri: "http://192.168.1.16:5002/callback" #TODO: change
   }
   body_encoded = URI.encode_www_form(body)
   response = $spotify_auth_server.post("/api/token", body_encoded) do |req|
