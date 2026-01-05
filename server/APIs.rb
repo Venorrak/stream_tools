@@ -10,11 +10,9 @@ require 'remove_emoji'
 gemfile do
   source "https://rubygems.org"
   gem "faraday"
-  gem "mysql2"
 end
 
 require "faraday"
-require "mysql2"
 require_relative "secret.rb"
 
 $online = false
@@ -30,13 +28,11 @@ $me_twitch_id = nil
 $points_last_refresh = AbsoluteTime.now
 $points_users_last_scan = []
 
-$acceptedJoels = ["GoldenJoel" , "Joel2" , "Joeler" , "Joel" , "jol" , "JoelCheck" , "JoelbutmywindowsXPiscrashing" , "JOELLINES", "Joeling", "Joeling", "LetHimJoel", "JoelPride", "WhoLetHimJoel", "Joelest", "EvilJoel", "JUSSY", "JoelJams", "JoelTrain", "BarrelJoel", "JoelWide1", "JoelWide2", "Joeling2"]
-
-$TokenService = Faraday.new(url: "http://192.168.0.16:5002") do |conn|
+$TokenService = Faraday.new(url: "http://token:5002") do |conn|
   conn.request :url_encoded
 end
 
-$SQLService = Faraday.new(url: "http://192.168.0.16:5001")
+$SQLService = Faraday.new(url: "http://sql:5001")
 
 $APItwitch = Faraday.new(url: "https://api.twitch.tv") do |conn|
   conn.request :url_encoded
@@ -55,8 +51,8 @@ def getTwitchToken()
     end
     rep = JSON.parse(response.body)
     $twitch_token = rep["token"]
-  rescue
-    puts "Token Service is down"
+  rescue => e
+    puts "Token Service is down: #{e}"
   end
 end
 
@@ -477,7 +473,7 @@ Thread.start do
 end
 
 EM.run do
-  bus = Faye::WebSocket::Client.new('ws://192.168.0.16:5000')
+  bus = Faye::WebSocket::Client.new('ws://bus:5000')
 
   bus.on :open do |event|
     p [:open, "BUS"]
