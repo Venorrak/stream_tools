@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ven-o-vision</title>
+        <link href="https://prod.kr/css/reset.css" rel="stylesheet">
+        <link href="https://prod.kr/css/base.css" rel="stylesheet">
+        <style>@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+            body {
+                color: white;
+                font-family: 'Figtree', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif;
+                font-size: 24px;
+                line-height: 1.5;
+            }
+            .title, h1, h2, h3, h4, h5, h6 { font-family: 'Comfortaa', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif; }
+            b, h1, h2, h3, h4, h5, h6 { font-weight: bold; }h1 { font-size: 300%; }
+            :root { --color: red; }
+            body { background-color: black; } #heat { background-color: #234; }
+            .layer {  width: min(calc(100vw - 128px), calc((100vh - 128px) / 9 * 16)); height: min(calc(100vh - 128px), calc((100vw - 128px) / 16 * 9)); margin-left: 64px; }
+            #heat.active { cursor: pointer; }
+        </style>
+        <script src="https://prod.kr/js/common_manual.js"></script>
+        <script src="https://prod.kr/js/base.js"></script>
+    </head>
+    <body style="margin: 0">
+        
+        <div class="" id="" style="pointer-events: none;">
+            <h1>
+                Ven-o-vision
+            </h1>
+        </div>
+        <div class="layer" id="heat">
+            
+        </div>
+        <div>
+            <div style="flex: 1; flex-direction: row;">
+                <button onclick="toggleSplashscreen(true)">
+                    enable splashscreen
+                </button>
+                <button onclick="toggleSplashscreen(false)">
+                    disable splashscreen
+                </button>
+            </div>
+            <div style="flex: 1; flex-direction: row;">
+                <button onclick="toggleBlur(true)">
+                    enable blur
+                </button>
+                <button onclick="toggleBlur(false)">
+                    disable blur
+                </button>
+            </div>
+            <div style="flex: 1; flex-direction: row;">
+                <button onclick="toggleChat(true)">
+                    enable chat
+                </button>
+                <button onclick="toggleChat(false)">
+                    disable chat
+                </button>
+            </div>
+        </div>
+        <script>
+            let DEBUG = false;
+            let channel, user, ws, config;
+            let wsClient;
+            addEvent("onload", () => {
+                if (!initialized) init();
+            });
+            let initialized = false;
+            let sensitivity = [64, 16];
+            async function init() { 
+                initialized = true;
+                initWS();
+                e("heat").classList.add("active");
+                e("heat").with("onpointerdown", "clickScreen(event)")
+                    .with("ondblclick", "event.preventDefault(); event.stopPropagation();")
+                    .with("oncontextmenu", "event.preventDefault(); event.stopPropagation();");
+                e("heat").with("onpointerup", "releaseScreen(event)");
+                e("heat").with("onmousemove", "hoverScreen(event)");
+                e("heat").with("ondragmove", "event.preventDefault();");
+            }
+            function initWS() {
+                ws = new WebSocket("wss://v.venorrak.dev");
+                ws.onclose = () => {
+                    console.log("Websocket Disconnected, reconnecting...");
+                    setTimeout(initWS, 5000);
+                }
+            }
+            function getData(event) {
+                let x = event.layerX / e("heat").clientWidth;
+                let y = event.layerY / e("heat").clientHeight;
+                return {
+                    x: x, y: y,
+                    button: (["left", "middle", "right"])[event.button] ?? "left", 
+                    shift: event.shiftKey, 
+                    ctrl: event.ctrlKey, 
+                    alt: event.altKey
+                };
+            }
+            let pressed = null, lastCoord = null;
+            function clickScreen(event) {
+                let data = getData(event);
+                pressed = data.button;
+                lastCoord = [data.x, data.y];
+                data.type = "click"; 
+                send(data);
+            }
+            function releaseScreen(event) {
+                let data = getData(event); 
+                pressed = null; 
+                lastCoord = [data.x, data.y];
+                data.type = "release"; 
+                send(data);
+            }
+            function hoverScreen(event) {
+                let data = getData(event);
+                if (!lastCoord) lastCoord = [data.x, data.y];
+                let coord = [data.x, data.y];
+                if (Math.hypot((coord[0] - lastCoord[0]) * 1920, (coord[1] - lastCoord[1]) * 1080) >= sensitivity[pressed ? 1 : 0]) {
+                    lastCoord = coord;
+                    if (pressed) {
+                        data.type = "drag"; 
+                        data.button = pressed;
+                        send(data);
+                    }
+                    if (!pressed) {
+                        data.type = "hover"; 
+                        send(data);
+                    }
+                }
+            }
+            function toggleSplashscreen(enable) {
+                let message = {
+                    "subject": "v.toggle.splashscreen",
+                    "payload": {
+                        "enabled": enable
+                    }
+                }
+                ws.send(JSON.stringify(message));
+                console.log("sent", message);
+            }
+            function toggleBlur(enable) {
+                let message = {
+                    "subject": "v.toggle.blur",
+                    "payload": {
+                        "enabled": enable
+                    }
+                }
+                ws.send(JSON.stringify(message));
+                console.log("sent", message);
+            }
+            function toggleChat(enable) {
+                let message = {
+                    "subject": "v.toggle.chat",
+                    "payload": {
+                        "enabled": enable
+                    }
+                }
+                ws.send(JSON.stringify(message));
+                console.log("sent", message);
+            }
+            function send(data) {
+                if (DEBUG) console.log("sending", data);
+                let message = {
+                    "subject": "v." + data.type,
+                    "payload": data
+                }
+                ws.send(JSON.stringify(message));
+                console.log("sent", message);
+            }
+        </script>
+    </body>
+</html>
