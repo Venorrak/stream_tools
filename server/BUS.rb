@@ -20,7 +20,6 @@ def sendToAllClients(msg)
   if msg.is_a?(Hash)
     msg = msg.to_json
   end
-  printBus(msg)
   $WsClients.each do |client|
     client.send(msg)
   end
@@ -41,7 +40,7 @@ EM.run do
   WebSocket::EventMachine::Server.start(:host => "0.0.0.0", :port => 5000) do |ws|
     ws.onopen do
       $WsClients.push(ws)
-      sendToAllClients(createMSG(["BUS"], {"message": "New client connected"}))
+      sendToAllClients(createMSG(["BUS"], {"nbOfClients": $WsClients.size}))
     end
 
     ws.onmessage do |msg|

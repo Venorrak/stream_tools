@@ -1,4 +1,4 @@
-socket = new WebSocket("ws://192.168.0.16:5963");
+socket = new WebSocket("ws://192.168.0.152:5963");
 
 var data;
 var emotes;

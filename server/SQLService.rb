@@ -258,7 +258,7 @@ post '/joel/:requestName' do
       },
       send(requestLink, *requestBody).to_json
     ]
-  rescue Mysql2::Error::ConnectionError => e
+  rescue Mysql2::Error => e
     p e
     restartSQLConnection()
     return [
@@ -277,9 +277,10 @@ post '/joel/:requestName' do
 end
 
 def restartSQLConnection()
-  $JoelDB.close
-  $StreamDB.close
-  exec("ruby SQLService.rb")
-  $JoelDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "joelScan", idle_timeout: 0, port: 3306)
-  $StreamDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "stream", idle_timeout: 0, port: 3306)
+  exit
+  # $JoelDB.close
+  # $StreamDB.close
+  # exec("ruby SQLService.rb")
+  # $JoelDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "joelScan", idle_timeout: 0, port: 3306)
+  # $StreamDB = Mysql2::Client.new(:host => "db", :username => "dev_user", :password => "dev_pass", :reconnect => true, :database => "stream", idle_timeout: 0, port: 3306)
 end

@@ -32,4 +32,7 @@ RUN gem update && gem install bundler \
 
 EXPOSE 5000
 
-CMD ["bash", "-c", "ruby", "/home/dev/stream_tools/server/BUS.rb  2>&1 | tee /home/dev/logs/bus_service.log"]
+# Create logs directory
+RUN mkdir -p /home/dev/logs
+
+CMD ["bash", "-c", "ruby /home/dev/stream_tools/server/BUS.rb 2>&1 | tee /home/dev/logs/bus_service.log"]

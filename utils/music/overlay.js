@@ -1,4 +1,4 @@
-socket = new WebSocket("ws://192.168.0.16:5963");
+socket = new WebSocket("ws://192.168.0.152:5963");
 var connected = false;
 var showing = false;
 
@@ -105,6 +105,6 @@ function updateBackgroudColor(imageUrl){
 
 setInterval(function(){
     if (!connected){
-        socket = new WebSocket("ws://192.168.0.16:5963");
+        socket = new WebSocket("ws://192.168.0.152:5963");
     }
 }, 100000);

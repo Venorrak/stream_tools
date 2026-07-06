@@ -5,40 +5,43 @@ General Structure
     "payload": {}
 }
 ```
-
-
+# v.facepoints
+payload :
+```json
+    "landmarks": [floats]
+```
+# v.audio
+payload : 
+```json
+    "wave": [floats]
+```
+# v.toggle.splashscreen
+payload :
+```json
+    "enabled": bool
+```
+# v.toggle.blur
+payload :
+```json
+    "enabled": bool
+```
+# v.toggle.chat
+payload :
+```json
+    "enabled": bool
+```
 # command.sendMessage
 payload :
 ```json
-
-```
-# command.changePlaylist
-payload :
-```json
-
+{
+    "content": "messagetosend"
+}
 ```
 # token.twitch
 payload :
 ```json
 {
     "status": "refreshed"
-}
-```
-# token.spotify
-payload :
-```json
-{
-    "status": "refreshed"
-}
-```
-# spotify.song.start
-payload :
-```json
-{
-    "title": "musicname",
-    "artist": "name",
-    "image": "urltoalbum",
-    "duration_ms": 1000
 }
 ```
 # twitch.raid
