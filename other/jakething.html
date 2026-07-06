@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Jake-taser 2000</title>
+        <style>@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+            body {
+                color: white;
+                font-family: 'Figtree', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif;
+                font-size: 24px;
+                line-height: 1.5;
+            }
+            .title, h1, h2, h3, h4, h5, h6 { font-family: 'Comfortaa', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif; }
+            b, h1, h2, h3, h4, h5, h6 { font-weight: bold; }h1 { font-size: 300%; }
+            :root { --color: red; }
+            body { background-color: black; } #heat { background-color: #234; }
+            .layer {  width: min(calc(100vw - 128px), calc((100vh - 128px) / 9 * 16)); height: min(calc(100vh - 128px), calc((100vw - 128px) / 16 * 9)); margin-left: 64px; }
+            #heat.active { cursor: pointer; }
+            .hidden { display: none; }
+        </style>
+        <link rel="preload" as="image" href="https://share.venorrak.dev/share/Untitled_Artwork.png?k=lkqY">
+        <link rel="preload" as="image" href="https://share.venorrak.dev/share/Untitled_Artwork2.png?k=1tuj">
+        <script src="https://prod.kr/js/common_manual.js"></script>
+        <script src="https://prod.kr/js/base.js"></script>
+    </head>
+
+    <body style="margin: 0;">
+        <input type="radio" name="mode" id="venorrak" checked><label for="venorrak">Venorrak</label>
+        <input type="radio" name="mode" id="Di"><label for="Di">Di</label>
+        <input type="radio" name="mode" id="Koa"><label for="Koa">Koa</label>
+        <input type="radio" name="mode" id="Fidh"><label for="Fidh">Fidh</label>
+        <br>
+        <button id="shockBtn" onclick="send()" style="background: none; border: none; padding: 0; cursor: pointer;">
+            <img id="shockImgActive" src="https://share.venorrak.dev/share/Untitled_Artwork.png?k=lkqY" alt="Shock active" style="width: 100px; height: 100px;">
+            <img id="shockImgDeactivated" class="hidden" src="https://share.venorrak.dev/share/Untitled_Artwork2.png?k=1tuj" alt="Shock deactivated" style="width: 100px; height: 100px;">
+        </button>
+    </body>
+
+    <script>
+        let person = "venorrak";
+        const DEBUG = true;
+        const shockBtn = document.querySelector('button');
+        const shockImgActive = document.querySelector('#shockImgActive');
+        const shockImgDeactivated = document.querySelector('#shockImgDeactivated');
+        const SHOCK_IMG_ACTIVE = "https://share.venorrak.dev/share/Untitled_Artwork.png?k=lkqY";
+        const SHOCK_IMG_DEACTIVATED = "https://share.venorrak.dev/share/Untitled_Artwork2.png?k=1tuj";
+        const preloadedShockImages = [];
+        addEvent("onload", () => {
+            if (!initialized) initWS();
+            preloadShockImages();
+            updatePersonFromRadios();
+            const radios = document.querySelectorAll('input[type="radio"][name="mode"]');
+            radios.forEach(r => {
+                r.addEventListener('change', () => {
+                    const lbl = document.querySelector(`label[for="${r.id}"]`);
+                    if (lbl) {
+                        person = lbl.textContent.trim();
+                        if (DEBUG) console.log('selected person', person);
+                    } else {
+                        person = r.value || r.id || person;
+                    }
+                });
+            });
+        });
+
+        function preloadShockImages() {
+            [SHOCK_IMG_ACTIVE, SHOCK_IMG_DEACTIVATED].forEach(src => {
+                const img = new Image();
+                img.decoding = 'async';
+                img.src = src;
+                preloadedShockImages.push(img);
+            });
+        }
+
+        let initialized = false;
+        function initWS() {
+            ws = new WebSocket("wss://v.venorrak.dev");
+            ws.onclose = () => {
+                console.log("Websocket Disconnected, reconnecting...");
+                setTimeout(initWS, 5000);
+            }
+            initialized = true;
+        }
+
+        function updatePersonFromRadios() {
+            const checked = document.querySelector('input[type="radio"][name="mode"]:checked');
+            if (checked) {
+                const lbl = document.querySelector(`label[for="${checked.id}"]`);
+                if (lbl) { person = lbl.textContent.trim(); console.log(person); return; }
+                person = checked.value || checked.id || person;
+                return;
+            }
+            const first = document.querySelector('input[type="radio"][name="mode"]');
+            if (first) {
+                const lbl = document.querySelector(`label[for="${first.id}"]`);
+                if (lbl) person = lbl.textContent.trim();
+                else person = first.value || first.id || person;
+            }
+        }
+
+        function send() {
+            shockBtn.disabled = true;
+            if (shockImgActive && shockImgDeactivated) {
+                shockImgActive.classList.add('hidden');
+                shockImgDeactivated.classList.remove('hidden');
+            }
+            updatePersonFromRadios();
+            deactivate(person)
+            let message = {
+                "subject": "taser.activate",
+                "payload": {
+                    "person": person
+                }
+            }
+            ws.send(JSON.stringify(message));
+            console.log("sent", message);
+        }
+
+        function deactivate(_person) {
+            setTimeout(() => {
+                shockBtn.disabled = false
+                if (shockImgActive && shockImgDeactivated) {
+                    shockImgDeactivated.classList.add('hidden');
+                    shockImgActive.classList.remove('hidden');
+                }
+                let message = {
+                    "subject": "taser.deactivate",
+                    "payload": {
+                        "person": _person
+                    }
+                }
+                ws.send(JSON.stringify(message))
+                console.log("sent", message)
+            }, 1500)
+        }
+    </script>
+</html>

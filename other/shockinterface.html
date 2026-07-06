@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Shock Interface</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300..700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+            body {
+                color: white;
+                font-family: 'Figtree', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif;
+                font-size: 24px;
+                line-height: 1.5;
+                background-color: black;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+            }
+            .title, h1, h2, h3, h4, h5, h6 { 
+                font-family: 'Comfortaa', Verdana, 'Segoe UI', Tahoma, Geneva, sans-serif; 
+            }
+            .container {
+                text-align: center;
+                padding: 0px 40px;
+                border: 2px solid red;
+                border-radius: 10px;
+            }
+            .label {
+                font-size: 32px;
+                margin-bottom: 20px;
+                color: #888;
+            }
+            .person-display {
+                font-size: 64px;
+                font-weight: bold;
+                color: red;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                min-height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .status {
+                font-size: 18px;
+                color: #666;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div id="personDisplay" class="person-display">---</div>
+        </div>
+    </body>
+
+    <script>
+        const personDisplay = document.querySelector('#personDisplay');
+        let ws = null;
+
+        function initWS() {
+            ws = new WebSocket("wss://v.venorrak.dev");
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.subject === "taser.activate") {
+                        personDisplay.textContent = message.payload.person;
+                    } else if (message.subject === "taser.deactivate") {
+                        personDisplay.textContent = '---';
+                    }
+                } catch (e) {
+                    console.error("Failed to parse message:", e);
+                }
+            };
+            ws.onclose = () => {
+                console.log("Websocket Disconnected, reconnecting...");
+                setTimeout(initWS, 5000);
+            };
+            ws.onerror = (error) => {
+                console.error("Websocket error:", error);
+            };
+        }
+
+        // Initialize WebSocket on load
+        initWS();
+    </script>
+</html>
